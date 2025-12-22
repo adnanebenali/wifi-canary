@@ -13,9 +13,9 @@ param(
   [switch]$Heatmap,
   [switch]$BackfillRssi,
 
-  [int]$EverySeconds = 15,         # daemon sampling period
-  [int]$Days = 2,                  # how many days to include for ledger/heatmap regen
-  [int]$BucketMinutes = 1,         # minute bucket size (1 recommended)
+  [int]$EverySeconds = 15, # daemon sampling period
+  [int]$Days = 2, # how many days to include for ledger/heatmap regen
+  [int]$BucketMinutes = 1, # minute bucket size (1 recommended)
   [string]$LogRoot = ''            # default computed below
 )
 
@@ -57,7 +57,7 @@ if ([string]::IsNullOrWhiteSpace($LogRoot)) { $LogRoot = Join-Path $RepoRoot 'lo
 if (-not (Test-Path -LiteralPath $LogRoot)) { New-Item -ItemType Directory -Path $LogRoot | Out-Null }
 
 $ErrLog = Join-Path $LogRoot 'daemon-errors.log'
-$Beat   = Join-Path $LogRoot 'daemon-heartbeat.txt'
+$Beat = Join-Path $LogRoot 'daemon-heartbeat.txt'
 Add-Content -LiteralPath $ErrLog -Value ("{0:o}  bootstrap OK (PS {1})  scriptFile={2}" -f (Get-Date), $PSVersionTable.PSVersion, $__scriptFile)
 
 # Optional: avoid weird “â€¦” characters in console
@@ -67,14 +67,14 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
 # ---------- basics ----------
 
-function Ensure-Dir($p){ if(-not (Test-Path -LiteralPath $p)){ New-Item -ItemType Directory -Path $p | Out-Null } }
+function Ensure-Dir($p) { if (-not (Test-Path -LiteralPath $p)) { New-Item -ItemType Directory -Path $p | Out-Null } }
 Ensure-Dir $LogRoot
 
 # ---------- parsing helpers (PS5-safe) ----------
-function Try-ParseDouble([string]$s){
-  if([string]::IsNullOrWhiteSpace($s)){ return $null }
+function Try-ParseDouble([string]$s) {
+  if ([string]::IsNullOrWhiteSpace($s)) { return $null }
   $v = 0.0
-  if([double]::TryParse($s, [ref]$v)){ return $v }
+  if ([double]::TryParse($s, [ref]$v)) { return $v }
   return $null
 }
 
@@ -84,7 +84,7 @@ function Convert-SignalPctToRssi {
     [int]$SignalPct
   )
 
-  if ($SignalPct -le 0)   { return -100 }  # very bad
+  if ($SignalPct -le 0) { return -100 }  # very bad
   if ($SignalPct -ge 100) { return -50 }   # very good
 
   # Linear interpolation: 0 -> -100 dBm, 100 -> -50 dBm
@@ -98,7 +98,8 @@ function Write-DebugLog {
   try {
     $path = Join-Path $LogRoot 'wlan-debug.log'
     Add-Content -LiteralPath $path -Value ("{0:o}  {1}" -f (Get-Date), $Message)
-  } catch {
+  }
+  catch {
     # swallow any logging errors; we don't want to break the sampler
   }
 }
@@ -108,37 +109,37 @@ function Write-DebugLog {
 function Get-WlanInfo {
   # Call netsh and join lines into a single string for regex scanning
   $rawLines = & netsh wlan show interfaces 2>$null
-  $raw      = if ($rawLines) { $rawLines -join "`n" } else { '' }
+  $raw = if ($rawLines) { $rawLines -join "`n" } else { '' }
 
   if (-not $raw -or $raw -notmatch '(?im)^\s*State\s*:\s*connected\s*$') {
     return [pscustomobject]@{
-      Connected=$false; SSID=$null; BSSID=$null; Signal=$null; Rssi=$null
-      RxMbps=$null; TxMbps=$null; Channel=$null; Band=$null; Radio=$null
+      Connected = $false; SSID = $null; BSSID = $null; Signal = $null; Rssi = $null
+      RxMbps = $null; TxMbps = $null; Channel = $null; Band = $null; Radio = $null
     }
   }
 
   # Small helper: first capture group or $null
   function _m { param($p) if ($raw -match $p) { $matches[1].Trim() } else { $null } }
 
-  $ssid    = _m '(?im)^\s*SSID\s*:\s*(.+)$'
+  $ssid = _m '(?im)^\s*SSID\s*:\s*(.+)$'
   # Win11 prints "AP BSSID :", others print "BSSID :"
-  $bssid   = _m '(?im)^\s*(?:AP\s+)?BSSID\s*:\s*([0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5})'
+  $bssid = _m '(?im)^\s*(?:AP\s+)?BSSID\s*:\s*([0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5})'
   $signalS = _m '(?im)^\s*Signal\s*:\s*(\d+)\s*%'
-  $rssiS   = _m '(?im)^\s*Rssi\s*:\s*(-?\d+)'
-  $rxS     = _m '(?im)^\s*Receive rate\s*\(Mbps\)\s*:\s*([0-9.]+)'
-  $txS     = _m '(?im)^\s*Transmit rate\s*\(Mbps\)\s*:\s*([0-9.]+)'
-  $chanS   = _m '(?im)^\s*Channel\s*:\s*(\d+)'
-  $band    = _m '(?im)^\s*Band\s*:\s*(.+)$'
-  $radio   = _m '(?im)^\s*Radio type\s*:\s*(.+)$'
+  $rssiS = _m '(?im)^\s*Rssi\s*:\s*(-?\d+)'
+  $rxS = _m '(?im)^\s*Receive rate\s*\(Mbps\)\s*:\s*([0-9.]+)'
+  $txS = _m '(?im)^\s*Transmit rate\s*\(Mbps\)\s*:\s*([0-9.]+)'
+  $chanS = _m '(?im)^\s*Channel\s*:\s*(\d+)'
+  $band = _m '(?im)^\s*Band\s*:\s*(.+)$'
+  $radio = _m '(?im)^\s*Radio type\s*:\s*(.+)$'
 
 
 
-  $signal  = if ($signalS) { [int]$signalS } else { $null }
-  $rssi    = if ($rssiS)   { [int]$rssiS }   else { $null }
-  $rxMbps  = if ($rxS)     { [int][math]::Round([double]$rxS) } else { $null }
-  $txMbps  = if ($txS)     { [int][math]::Round([double]$txS) } else { $null }
-  $channel = if ($chanS)   { [int]$chanS }   else { $null }
-  if ($bssid) { $bssid = $bssid.ToLower().Replace('-',':') }
+  $signal = if ($signalS) { [int]$signalS } else { $null }
+  $rssi = if ($rssiS) { [int]$rssiS }   else { $null }
+  $rxMbps = if ($rxS) { [int][math]::Round([double]$rxS) } else { $null }
+  $txMbps = if ($txS) { [int][math]::Round([double]$txS) } else { $null }
+  $channel = if ($chanS) { [int]$chanS }   else { $null }
+  if ($bssid) { $bssid = $bssid.ToLower().Replace('-', ':') }
 
   #Write-DebugLog ("Get-WlanInfo: final Signal={0} Rssi={1}" -f $signal, $rssi)
 
@@ -146,7 +147,7 @@ function Get-WlanInfo {
     Connected = $true
     SSID      = $ssid
     BSSID     = $bssid
-    Signal    = $signal   # 0�100
+    Signal    = $signal   # 0-100
     Rssi      = $rssi     # dBm (negative)
     RxMbps    = $rxMbps
     TxMbps    = $txMbps
@@ -162,13 +163,14 @@ function Get-WlanInfo {
 
 
 # ---------- ping once (ms + loss) ----------
-function Ping-Once([string]$Target){
-  try{
+function Ping-Once([string]$Target) {
+  try {
     $r = Test-Connection -ComputerName $Target -Count 1 -Quiet:$false -ErrorAction Stop
     # Test-Connection (PS5) returns objects; average ResponseTime is fine for 1 packet
     $ms = ($r | Measure-Object -Property ResponseTime -Average).Average
     return [pscustomobject]@{ Ms = [int]([math]::Round($ms)); LossPct = 0 }
-  } catch {
+  }
+  catch {
     return [pscustomobject]@{ Ms = $null; LossPct = 100 }
   }
 }
@@ -177,17 +179,19 @@ function Ping-Once([string]$Target){
 function Get-DefaultGateway {
   try {
     $gw = Get-NetIPConfiguration -ErrorAction Stop |
-          Where-Object { $_.IPv4DefaultGateway -and $_.IPv4DefaultGateway.NextHop } |
-          Select-Object -First 1 -ExpandProperty IPv4DefaultGateway
+    Where-Object { $_.IPv4DefaultGateway -and $_.IPv4DefaultGateway.NextHop } |
+    Select-Object -First 1 -ExpandProperty IPv4DefaultGateway
     if ($gw -and $gw.NextHop) { return $gw.NextHop }
-  } catch {}
+  }
+  catch {}
 
   try {
     $gw2 = Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction Stop |
-           Sort-Object -Property RouteMetric,Metric |
-           Select-Object -First 1 -ExpandProperty NextHop
+    Sort-Object -Property RouteMetric, Metric |
+    Select-Object -First 1 -ExpandProperty NextHop
     if ($gw2 -and $gw2 -ne '0.0.0.0') { return $gw2 }
-  } catch {}
+  }
+  catch {}
 
   try {
     $rp = route print 0.0.0.0 2>$null
@@ -196,7 +200,8 @@ function Get-DefaultGateway {
         return $matches[1]
       }
     }
-  } catch {}
+  }
+  catch {}
 
   return $null
 }
@@ -206,7 +211,8 @@ function Measure-IcmpMs {
   try {
     $res = Test-Connection -TargetName $Target -Count 1 -TimeoutMilliseconds $TimeoutMs -ErrorAction Stop
     if ($res) { return [int][math]::Round($res.Latency) }
-  } catch {}
+  }
+  catch {}
   return $null
 }
 
@@ -219,17 +225,19 @@ function Measure-TcpMs {
     if (-not $iar.AsyncWaitHandle.WaitOne($TimeoutMs)) { $client.Close(); return $null }
     $client.EndConnect($iar); $sw.Stop(); $client.Close()
     return [int]$sw.ElapsedMilliseconds
-  } catch { return $null }
+  }
+  catch { return $null }
 }
 
 function Measure-HttpMs {
   param([Parameter(Mandatory)][string]$Url, [int]$TimeoutMs = 2000)
   try {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    $null = Invoke-WebRequest -Method Head -Uri $Url -TimeoutSec ([int][math]::Ceiling($TimeoutMs/1000.0)) -ErrorAction Stop
+    $null = Invoke-WebRequest -Method Head -Uri $Url -TimeoutSec ([int][math]::Ceiling($TimeoutMs / 1000.0)) -ErrorAction Stop
     $sw.Stop()
     return [int]$sw.ElapsedMilliseconds
-  } catch { return $null }
+  }
+  catch { return $null }
 }
 
 
@@ -238,12 +246,12 @@ function Measure-HttpMs {
 function Get-LatencyTargets {
   $t = @()
   $gw = Get-DefaultGateway
-  if ($gw) { $t += @{ Name='gateway'; Addr=$gw; IsIp=$true } }
+  if ($gw) { $t += @{ Name = 'gateway'; Addr = $gw; IsIp = $true } }
 
-  $t += @{ Name='cloud-cf'; Addr='1.1.1.1';  IsIp=$true }   # Cloudflare anycast
-  $t += @{ Name='cloud-gg'; Addr='8.8.8.8';  IsIp=$true }   # Google anycast
-  $t += @{ Name='cf-host';  Addr='one.one.one.one'; IsIp=$false } # DNS will be required
-  $t += @{ Name='gg-host';  Addr='dns.google';      IsIp=$false }
+  $t += @{ Name = 'cloud-cf'; Addr = '1.1.1.1'; IsIp = $true }   # Cloudflare anycast
+  $t += @{ Name = 'cloud-gg'; Addr = '8.8.8.8'; IsIp = $true }   # Google anycast
+  $t += @{ Name = 'cf-host'; Addr = 'one.one.one.one'; IsIp = $false } # DNS will be required
+  $t += @{ Name = 'gg-host'; Addr = 'dns.google'; IsIp = $false }
   return $t
 }
 
@@ -252,13 +260,13 @@ function Test-Latency {
 
   $targets = Get-LatencyTargets
   if (-not $targets -or $targets.Count -eq 0) {
-    return [pscustomobject]@{ MedianMs=$null; Loss=$Count }
+    return [pscustomobject]@{ MedianMs = $null; Loss = $Count }
   }
 
   $samples = @()
   $loss = 0
 
-  for ($i=0; $i -lt $Count; $i++) {
+  for ($i = 0; $i -lt $Count; $i++) {
     $best = $null
     foreach ($t in $targets) {
       # 1) ICMP
@@ -272,7 +280,7 @@ function Test-Latency {
       }
       if ($ms -eq $null -and -not $t.IsIp) {
         # 3) HTTP only for hostnames (avoid cert/redirect gotchas on raw IP)
-        $ms = Measure-HttpMs -Url ("https://{0}/" -f $t.Addr) -TimeoutMs ([math]::Max($TimeoutMs,2000))
+        $ms = Measure-HttpMs -Url ("https://{0}/" -f $t.Addr) -TimeoutMs ([math]::Max($TimeoutMs, 2000))
       }
       if ($ms -ne $null) {
         if ($best -eq $null -or $ms -lt $best) { $best = $ms }
@@ -288,7 +296,7 @@ function Test-Latency {
     $median = $sorted[$mid]
   }
 
-  [pscustomobject]@{ MedianMs=$median; Loss=$loss }
+  [pscustomobject]@{ MedianMs = $median; Loss = $loss }
 }
 
 function Test-LatencySingle {
@@ -299,16 +307,17 @@ function Test-LatencySingle {
   )
   $samples = @()
   $loss = 0
-  for ($i=0; $i -lt $Count; $i++) {
+  for ($i = 0; $i -lt $Count; $i++) {
     $ms = $null
     try {
       $r = Test-Connection -TargetName $Target -Count 1 -TimeoutMilliseconds $TimeoutMs -ErrorAction Stop
       if ($r) { $ms = [int][math]::Round($r.Latency) }
-    } catch {}
+    }
+    catch {}
     if ($ms -eq $null) { $ms = Measure-TcpMs -Target $Target -Port 53  -TimeoutMs $TimeoutMs }
     if ($ms -eq $null) { $ms = Measure-TcpMs -Target $Target -Port 443 -TimeoutMs $TimeoutMs }
     if ($ms -eq $null -and $Target -notmatch '^\d{1,3}(\.\d{1,3}){3}$') {
-      $ms = Measure-HttpMs -Url ("https://{0}/" -f $Target) -TimeoutMs ([math]::Max($TimeoutMs,2000))
+      $ms = Measure-HttpMs -Url ("https://{0}/" -f $Target) -TimeoutMs ([math]::Max($TimeoutMs, 2000))
     }
     if ($ms -ne $null) { $samples += $ms } else { $loss++ }
   }
@@ -317,14 +326,23 @@ function Test-LatencySingle {
     $sorted = $samples | Sort-Object
     $median = $sorted[[int][math]::Floor(($sorted.Count - 1) / 2)]
   }
-  [pscustomobject]@{ MedianMs = $median; Loss = $loss }
+
+  $lossCount = if ($null -eq $loss) { 0 } else { [int]$loss }
+  $cnt = [int]$Count
+  $lossPct = if ($cnt -gt 0) { [int][Math]::Round(100.0 * $lossCount / $cnt) } else { 0 }
+
+  return [PSCustomObject]@{
+    MedianMs  = $median
+    LossCount = $lossCount
+    LossPct   = $lossPct
+  }
 }
 
 
 
 
 # ---------- CSV I/O ----------
-function Get-CsvPath([datetime]$d){ return Join-Path $LogRoot ($d.ToString('yyyy-MM-dd') + '.csv') }
+function Get-CsvPath([datetime]$d) { return Join-Path $LogRoot ($d.ToString('yyyy-MM-dd') + '.csv') }
 
 function Update-CsvRssi {
   param(
@@ -338,7 +356,7 @@ function Update-CsvRssi {
   }
 
   $files = Get-ChildItem -LiteralPath $LogRoot -Filter '*.csv' -ErrorAction SilentlyContinue |
-           Sort-Object Name
+  Sort-Object Name
 
   if (-not $files) {
     Write-Host "Update-CsvRssi: no CSV files under $LogRoot"
@@ -419,54 +437,55 @@ function Update-CsvRssi {
 
 
 function Write-SampleRow {
-  $today   = (Get-Date).Date
+  $today = (Get-Date).Date
   $csvPath = Get-CsvPath $today
-  $isNew   = -not (Test-Path -LiteralPath $csvPath)
+  $isNew = -not (Test-Path -LiteralPath $csvPath)
   if ($isNew) {
     'TimestampUtc,IfName,SSID,BSSID,Channel,SignalPct,LinkMbps,PingGW_Ms,PingGW_LossPct,Ping88_Ms,Ping88_LossPct,Ping11_Ms,Ping11_LossPct,Rssi' |
-      Set-Content -LiteralPath $csvPath -Encoding UTF8
+    Set-Content -LiteralPath $csvPath -Encoding UTF8
   }
 
   # --- Collect Wi-Fi ---
   $wlan = Get-WlanInfo
-  $utc  = (Get-Date).ToUniversalTime().ToString('o')
+  $utc = (Get-Date).ToUniversalTime().ToString('o')
 
   $ifn = $null
   try {
     $ifn = (Get-NetAdapter -Physical |
-            Where-Object { $_.Status -eq 'Up' -and $_.NdisPhysicalMedium -eq '802.11' } |
-            Select-Object -First 1 -ExpandProperty Name)
-  } catch {}
+      Where-Object { $_.Status -eq 'Up' -and $_.NdisPhysicalMedium -eq '802.11' } |
+      Select-Object -First 1 -ExpandProperty Name)
+  }
+  catch {}
 
   # --- Collect latency (gateway + public internet) ---
   $gwIp = Get-DefaultGateway
-  $gw   = if ($gwIp) { Test-LatencySingle -Target $gwIp       -Count 2 -TimeoutMs 1500 } else { [pscustomobject]@{ MedianMs=$null; Loss=2 } }
-  $g88  =                 Test-LatencySingle -Target '8.8.8.8' -Count 2 -TimeoutMs 1500
-  $c11  =                 Test-LatencySingle -Target '1.1.1.1' -Count 2 -TimeoutMs 1500
+  $gw = if ($gwIp) { Test-LatencySingle -Target $gwIp       -Count 2 -TimeoutMs 1500 } else { [pscustomobject]@{ MedianMs = $null; Loss = 2 } }
+  $g88 = Test-LatencySingle -Target '8.8.8.8' -Count 2 -TimeoutMs 1500
+  $c11 = Test-LatencySingle -Target '1.1.1.1' -Count 2 -TimeoutMs 1500
 
   # --- Build row ---
   $rowParts = @()
   $rowParts += '"' + $utc + '"'
-  $rowParts += if ($ifn)        { '"' + ($ifn  -replace '"','''') + '"' } else { '""' }
-  $rowParts += if ($wlan.SSID)  { '"' + ($wlan.SSID  -replace '"','''') + '"' } else { '""' }
-  $rowParts += if ($wlan.BSSID) { '"' + ($wlan.BSSID -replace '"','''') + '"' } else { '""' }
+  $rowParts += if ($ifn) { '"' + ($ifn -replace '"', '''') + '"' } else { '""' }
+  $rowParts += if ($wlan.SSID) { '"' + ($wlan.SSID -replace '"', '''') + '"' } else { '""' }
+  $rowParts += if ($wlan.BSSID) { '"' + ($wlan.BSSID -replace '"', '''') + '"' } else { '""' }
   $rowParts += if ($wlan.Channel -ne $null) { [string]$wlan.Channel } else { '' }
-  $rowParts += if ($wlan.Signal  -ne $null) { [string]$wlan.Signal  } else { '' }
-  $rowParts += if ($wlan.RxMbps  -ne $null) { [string]$wlan.RxMbps  } else { '' }
+  $rowParts += if ($wlan.Signal -ne $null) { [string]$wlan.Signal } else { '' }
+  $rowParts += if ($wlan.RxMbps -ne $null) { [string]$wlan.RxMbps } else { '' }
 
   # Gateway (median ms + loss count)
-  $rowParts += if ($gw.MedianMs -ne $null)  { [string]$gw.MedianMs } else { '' }
-  $rowParts += [string]$gw.Loss
+  $rowParts += if ($gw.MedianMs -ne $null) { [string]$gw.MedianMs } else { '' }
+  $rowParts += [string]$gw.LossPct
 
   # 8.8.8.8
   $rowParts += if ($g88.MedianMs -ne $null) { [string]$g88.MedianMs } else { '' }
-  $rowParts += [string]$g88.Loss
+  $rowParts += [string]$g88.LossPct
 
   # 1.1.1.1
   $rowParts += if ($c11.MedianMs -ne $null) { [string]$c11.MedianMs } else { '' }
-  $rowParts += [string]$c11.Loss
+  $rowParts += [string]$c11.LossPct
 
-  $rowParts += if ($wlan.Rssi  -ne $null) { [string]$wlan.Rssi  } else { '' }
+  $rowParts += if ($wlan.Rssi -ne $null) { [string]$wlan.Rssi } else { '' }
 
 
   Add-Content -LiteralPath $csvPath -Value ($rowParts -join ',')
@@ -475,61 +494,8 @@ function Write-SampleRow {
 
 
 
-# ---------- color policy (central place to tweak) ----------
-function Get-MinuteStatus {
-  param(
-    [int]$WorstLoss,     # 0..100 or $null
-    [int]$MedianMs,      # median of available pings (public targets preferred)
-    [int]$MinSignalPct,  # min signal in that minute (0..100) or $null
-    [int]$AvgLinkMbps    # avg link if available or $null
-  )
-  # red: hard outage by loss
-  if($WorstLoss -ne $null -and $WorstLoss -ge 100){ return 'red' }
-
-  # latency-driven and signal/link degradations
-  if($MedianMs -ne $null -and $MedianMs -gt 400){ return 'orange' }
-  if($MedianMs -ne $null -and $MedianMs -gt 200){ return 'yellow' }
-
-  if($MinSignalPct -ne $null){
-    if($MinSignalPct -lt 35){ return 'orange' }
-    if($MinSignalPct -lt 50){ return 'yellow' }
-  }
-
-  if($AvgLinkMbps -ne $null){
-    if($AvgLinkMbps -lt 6){ return 'orange' }
-    if($AvgLinkMbps -lt 12){ return 'yellow' }
-  }
-
-  return 'green'
-}
-
-function Get-CellColorHex($status){
-  switch ($status) {
-    'greener' { '#2e7d32' }
-    'green'   { '#3CA341' }
-    #'yellowish'  { '#A2AD54' }
-    'yellow'  { '#fdd835' }
-    'orange'  { '#ffab67' }
-    'red'     { '#e53935' }
-    default   { '#bdbdbd' }  # grey
-  }
-}
 
 # ---------- ledger (group by local minute; worst-sample-wins) ----------
-
-# function Parse-IsoUtc {
-  # param([string]$s)
-  # if ([string]::IsNullOrWhiteSpace($s)) { return $null }
-  # $dt = [datetime]::MinValue
-  # $ok = [datetime]::TryParseExact(
-    # $s,
-    # 'o',  # ISO 8601 "round-trip"
-    # [System.Globalization.CultureInfo]::InvariantCulture,
-    # [System.Globalization.DateTimeStyles]::RoundtripKind,
-    # [ref]$dt
-  # )
-  # if ($ok) { return $dt } else { return $null }
-# }
 
 function Parse-IsoUtc {
   <#
@@ -555,16 +521,17 @@ function Parse-IsoUtc {
     $rest = $m.Groups['rest'].Value
     if ([string]::IsNullOrEmpty($frac)) {
       $frac = '0000000'
-    } else {
-      if ($frac.Length -gt 7) { $frac = $frac.Substring(0,7) }
-      if ($frac.Length -lt 7) { $frac = $frac.PadRight(7,'0') }
+    }
+    else {
+      if ($frac.Length -gt 7) { $frac = $frac.Substring(0, 7) }
+      if ($frac.Length -lt 7) { $frac = $frac.PadRight(7, '0') }
     }
     $t = "$base.$frac$rest"
   }
 
   # Try strict parse as "o" via DateTimeOffset first
   $dto = [datetimeoffset]::MinValue
-  $ok  = [datetimeoffset]::TryParseExact(
+  $ok = [datetimeoffset]::TryParseExact(
     $t, 'o',
     [Globalization.CultureInfo]::InvariantCulture,
     [Globalization.DateTimeStyles]::AssumeUniversal,
@@ -605,21 +572,21 @@ function Update-LedgerDay {
     $lnk = Try-ParseDouble $r.LinkMbps
     $rssi = Try-ParseDouble $r.Rssi
 
-    $gwm = Try-ParseDouble $r.PingGW_Ms;   $gwl = Try-ParseDouble $r.PingGW_LossPct
-    $g8m = Try-ParseDouble $r.Ping88_Ms;   $g8l = Try-ParseDouble $r.Ping88_LossPct
-    $g1m = Try-ParseDouble $r.Ping11_Ms;   $g1l = Try-ParseDouble $r.Ping11_LossPct
+    $gwm = Try-ParseDouble $r.PingGW_Ms; $gwl = Try-ParseDouble $r.PingGW_LossPct
+    $g8m = Try-ParseDouble $r.Ping88_Ms; $g8l = Try-ParseDouble $r.Ping88_LossPct
+    $g1m = Try-ParseDouble $r.Ping11_Ms; $g1l = Try-ParseDouble $r.Ping11_LossPct
 
     $bssid = $null
     if ($r.BSSID -and -not [string]::IsNullOrWhiteSpace($r.BSSID)) {
-      $bssid = ($r.BSSID.Trim().ToLower() -replace '-',':')
+      $bssid = ($r.BSSID.Trim().ToLower() -replace '-', ':')
     }
 
     $proj += [pscustomobject]@{
       Minute = $minute
       Signal = $sig
       Link   = $lnk
-      Ms     = @($g8m,$g1m,$gwm) | Where-Object { $_ -ne $null }
-      Losses = @($g8l,$g1l,$gwl) | Where-Object { $_ -ne $null }
+      Ms     = @($g8m, $g1m, $gwm) | Where-Object { $_ -ne $null }
+      Losses = @($g8l, $g1l, $gwl) | Where-Object { $_ -ne $null }
       Bssid  = $bssid
       Rssi   = $rssi
     }
@@ -631,28 +598,28 @@ function Update-LedgerDay {
     $arr = $g.Group
     $samples = $arr.Count
 
-    $allMs    = @()
-    $allLoss  = @()
-    $sigVals  = @()
+    $allMs = @()
+    $allLoss = @()
+    $sigVals = @()
     $linkVals = @()
     $bssidVals = @()
     $rssiVals = @()
 
     foreach ($x in $arr) {
-      if ($x.Ms)     { $allMs   += $x.Ms }
+      if ($x.Ms) { $allMs += $x.Ms }
       if ($x.Losses) { $allLoss += $x.Losses }
       if ($x.Signal -ne $null) { $sigVals += $x.Signal }
       if ($x.Rssi -ne $null) { $rssiVals += $x.Rssi }
-      if ($x.Link   -ne $null) { $linkVals += $x.Link }
-      if ($x.Bssid)            { $bssidVals += $x.Bssid }
+      if ($x.Link -ne $null) { $linkVals += $x.Link }
+      if ($x.Bssid) { $bssidVals += $x.Bssid }
     }
 
     $medianMs = $null
     if ($allMs.Count) {
       $sorted = $allMs | Sort-Object
       $n = $sorted.Count
-      if ($n -band 1) { $medianMs = [int]$sorted[($n-1)/2] }
-      else { $medianMs = [int]([math]::Round( ($sorted[$n/2 -1] + $sorted[$n/2]) / 2.0 )) }
+      if ($n -band 1) { $medianMs = [int]$sorted[($n - 1) / 2] }
+      else { $medianMs = [int]([math]::Round( ($sorted[$n / 2 - 1] + $sorted[$n / 2]) / 2.0 )) }
     }
 
     $worstLoss = $null
@@ -670,7 +637,7 @@ function Update-LedgerDay {
     $bssid = $null
     if ($bssidVals.Count) { $bssid = $bssidVals[-1] }
 
-    $status = Get-MinuteStatus -MedianMs $medianMs -MinSignalPct $minSig -WorstLoss $worstLoss
+    $status = Get-MinuteStatus -MedianMs $medianMs -MinSignalPct $minSig -WorstLoss $worstLoss -AvgLinkMbps $avgLink
 
     $outRows += [pscustomobject]@{
       Minute    = $g.Name
@@ -687,25 +654,25 @@ function Update-LedgerDay {
 
 
   # Persist roaming info: mark a minute when BSSID changes from the last non-null
-    $sorted = $outRows | Sort-Object Minute
-    $lastB  = $null
-    foreach ($r in $sorted) {
-        # default
-        $r | Add-Member -NotePropertyName Roaming -NotePropertyValue $false -Force
+  $sorted = $outRows | Sort-Object Minute
+  $lastB = $null
+  foreach ($r in $sorted) {
+    # default
+    $r | Add-Member -NotePropertyName Roaming -NotePropertyValue $false -Force
 
-        # only consider minutes that have �real� data (non-grey conditions same as your UI)
-        $hasSig    = ($r.MinSig -ne $null -and $r.MinSig -gt 0)
-        $hasSample = ($r.Samples -ne $null -and $r.Samples -gt 0)
-        $b         = $r.Bssid
+    # only consider minutes that have �real� data (non-grey conditions same as your UI)
+    $hasSig = ($r.MinSig -ne $null -and $r.MinSig -gt 0)
+    $hasSample = ($r.Samples -ne $null -and $r.Samples -gt 0)
+    $b = $r.Bssid
 
-        if ($hasSig -and $hasSample -and $b -and -not [string]::IsNullOrWhiteSpace($b)) {
-            if ($lastB -and $b -ne $lastB) { $r.Roaming = $true }
-            $lastB = $b  # advance only when valid so gaps don't �erase� context
-        }
+    if ($hasSig -and $hasSample -and $b -and -not [string]::IsNullOrWhiteSpace($b)) {
+      if ($lastB -and $b -ne $lastB) { $r.Roaming = $true }
+      $lastB = $b  # advance only when valid so gaps don't �erase� context
     }
+  }
 
-    # if you later reassign $outRows, keep the sorted list:
-    $outRows = $sorted
+  # if you later reassign $outRows, keep the sorted list:
+  $outRows = $sorted
 
 
 
@@ -718,7 +685,7 @@ function Update-LedgerDay {
 function Update-Ledger {
   param([int]$Days = 2)
   $today = (Get-Date).Date
-  for($i=0;$i -lt $Days;$i++){
+  for ($i = 0; $i -lt $Days; $i++) {
     $d = $today.AddDays(-$i).ToString('yyyy-MM-dd')
     Update-LedgerDay -Day $d
   }
@@ -728,14 +695,14 @@ function Update-Ledger {
 function Get-AvailableDays {
   $days = @()
   $csvs = Get-ChildItem -LiteralPath $LogRoot -Filter '*.csv' -ErrorAction SilentlyContinue
-  foreach($f in $csvs){
+  foreach ($f in $csvs) {
     $n = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
-    if($n -match '^\d{4}-\d{2}-\d{2}$'){ $days += $n }
+    if ($n -match '^\d{4}-\d{2}-\d{2}$') { $days += $n }
   }
   $led = Get-ChildItem -LiteralPath $LogRoot -Filter '*.ledger.json' -ErrorAction SilentlyContinue
-  foreach($f in $led){
-    $n = [System.IO.Path]::GetFileNameWithoutExtension($f.Name) -replace '\.ledger$',''
-    if($n -match '^\d{4}-\d{2}-\d{2}$'){ $days += $n }
+  foreach ($f in $led) {
+    $n = [System.IO.Path]::GetFileNameWithoutExtension($f.Name) -replace '\.ledger$', ''
+    if ($n -match '^\d{4}-\d{2}-\d{2}$') { $days += $n }
   }
   return ($days | Sort-Object -Unique)
 }
@@ -746,37 +713,41 @@ function Get-DaemonStatus {
   param([string]$Root = (Split-Path -Parent $PSCommandPath))
 
   $logs = Join-Path $Root 'logs'
-  $hb   = Join-Path $logs 'daemon-heartbeat.txt'
+  $hb = Join-Path $logs 'daemon-heartbeat.txt'
 
-  $isRunning   = $false
-  $lastBeat    = $null
-  $ageSeconds  = $null
-  $reason      = ''
+  $isRunning = $false
+  $lastBeat = $null
+  $ageSeconds = $null
+  $reason = ''
 
   if (Test-Path -LiteralPath $hb) {
     try {
       $lastBeat = Get-Item -LiteralPath $hb | Select-Object -ExpandProperty LastWriteTime
       $ageSeconds = [int]([datetime]::Now - $lastBeat).TotalSeconds
-    } catch {}
+    }
+    catch {}
   }
 
   # Fallback: look for a powershell with -Daemon and our script name
   if (-not $isRunning) {
     try {
       $procs = Get-CimInstance Win32_Process |
-        Where-Object { $_.CommandLine -match 'wifi-canary\.ps1' -and $_.CommandLine -match '\-Daemon' }
+      Where-Object { $_.CommandLine -match 'wifi-canary\.ps1' -and $_.CommandLine -match '\-Daemon' }
       if ($procs) {
         $isRunning = $true
         if (-not $pid) { $pid = ($procs | Select-Object -First 1).ProcessId }
       }
-    } catch {}
+    }
+    catch {}
   }
 
   if (-not $isRunning) {
     $reason = 'stopped'
-  } elseif ($ageSeconds -ne $null -and $ageSeconds -gt 60) {
+  }
+  elseif ($ageSeconds -ne $null -and $ageSeconds -gt 60) {
     $reason = "stale heartbeat (${ageSeconds}s)"
-  } else {
+  }
+  else {
     $reason = 'ok'
   }
 
@@ -793,12 +764,12 @@ function Get-CellColorHex {
   param([string]$Status)
   switch ($Status) {
     'greener' { '#2e7d32' }
-    'green'   { '#3CA341' }
+    'green' { '#3CA341' }
     #'yellowish' { '#A2AD54' }
     'yellow' { '#fbc02d' }   # high latency / medium signal
     'orange' { '#fb8c00' }   # degraded
-    'red'    { '#e53935' }   # outage / very poor
-    default  { '#bdbdbd' }   # grey = no data / pending
+    'red' { '#e53935' }   # outage / very poor
+    default { '#bdbdbd' }   # grey = no data / pending
   }
 }
 
@@ -837,9 +808,9 @@ function Get-MinuteStatus {
       6) If multiple KPIs exist, pick the WORSE bucket (red > orange > yellow > green > greener).
   #>
   param(
-    [Nullable[int]]$MedianMs,         # e.g., 10, 250, null
-    [Nullable[int]]$MinSignalPct,     # e.g., 52, null
-    [Nullable[int]]$WorstLoss,        # e.g., 0..100, null
+    [Nullable[int]]$MedianMs, # e.g., 10, 250, null
+    [Nullable[int]]$MinSignalPct, # e.g., 52, null
+    [Nullable[int]]$WorstLoss, # e.g., 0..100, null
     [Nullable[int]]$AvgLinkMbps       # e.g., 144, 6, null
   )
 
@@ -854,32 +825,32 @@ function Get-MinuteStatus {
   # Latency bucket
   $latBucket = $null
   if ($MedianMs -ne $null) {
-    if     ($MedianMs -lt 60)  { $latBucket = 'greener' }
+    if ($MedianMs -lt 60) { $latBucket = 'greener' }
     elseif ($MedianMs -lt 120) { $latBucket = 'green' }
     elseif ($MedianMs -lt 300) { $latBucket = 'yellow' }
     elseif ($MedianMs -lt 800) { $latBucket = 'orange' }
-    else                       { $latBucket = 'red' }
+    else { $latBucket = 'red' }
   }
 
   # Signal bucket
   $sigBucket = $null
   if ($MinSignalPct -ne $null) {
-    if     ($MinSignalPct -gt 85) { $sigBucket = 'greener' }
+    if ($MinSignalPct -gt 85) { $sigBucket = 'greener' }
     elseif ($MinSignalPct -ge 70) { $sigBucket = 'green' }
     #elseif ($MinSignalPct -ge 65) { $sigBucket = 'yellowish' }
     elseif ($MinSignalPct -ge 60) { $sigBucket = 'yellow' }
     elseif ($MinSignalPct -ge 50) { $sigBucket = 'orange' }
-    else                          { $sigBucket = 'red' }
+    else { $sigBucket = 'red' }
   }
 
   # Link bucket
   $lnkBucket = $null
   if ($AvgLinkMbps -ne $null) {
-    if     ($AvgLinkMbps -ge 50) { $lnkBucket = 'greener' }
+    if ($AvgLinkMbps -ge 50) { $lnkBucket = 'greener' }
     elseif ($AvgLinkMbps -ge 24) { $lnkBucket = 'green' }
     elseif ($AvgLinkMbps -ge 12) { $lnkBucket = 'yellow' }
-    elseif ($AvgLinkMbps -ge 6)  { $lnkBucket = 'orange' }
-    else                         { $lnkBucket = 'red' }
+    elseif ($AvgLinkMbps -ge 6) { $lnkBucket = 'orange' }
+    else { $lnkBucket = 'red' }
   }
 
   # 2) (original intent) If both latency & signal unknown, we used to grey out.
@@ -892,7 +863,7 @@ function Get-MinuteStatus {
   if ($latBucket -eq $null -and $sigBucket -eq $null -and $lnkBucket -ne $null) { return $lnkBucket }
 
   # 4/6) Multiple known => pick the WORST bucket
-  $rank = @{ greener=0; green=1; yellow=2; orange=3; red=4 }
+  $rank = @{ greener = 0; green = 1; yellow = 2; orange = 3; red = 4 }
 
   $candidates = @()
   if ($latBucket -ne $null) { $candidates += $latBucket }
@@ -905,33 +876,33 @@ function Get-MinuteStatus {
 }
 
 function New-Heatmap {
-  param([int]$Days=1,[int]$BucketMinutes=1)
+  param([int]$Days = 1, [int]$BucketMinutes = 1)
 
   $availableDays = Get-AvailableDays
-  if(-not $availableDays){ return }
+  if (-not $availableDays) { return }
 
   # last fully-completed minute at render time
-  $nowLocal      = Get-Date
-  $floorNow      = Get-Date -Year $nowLocal.Year -Month $nowLocal.Month -Day $nowLocal.Day -Hour $nowLocal.Hour -Minute $nowLocal.Minute -Second 0
-  $lastComplete  = $floorNow.AddMinutes(-1)
-  $thisDay       = $nowLocal.Date
+  $nowLocal = Get-Date
+  $floorNow = Get-Date -Year $nowLocal.Year -Month $nowLocal.Month -Day $nowLocal.Day -Hour $nowLocal.Hour -Minute $nowLocal.Minute -Second 0
+  $lastComplete = $floorNow.AddMinutes(-1)
+  $thisDay = $nowLocal.Date
   $nextMinuteNow = $floorNow                          # minute currently being filled
 
   # FIX: render the most recent N days (then display in chronological order)
   $targetDays = $availableDays | Sort-Object | Select-Object -Last $Days
 
-  foreach($day in ($targetDays | Sort-Object)){
+  foreach ($day in ($targetDays | Sort-Object)) {
     $ledgerPath = Join-Path $LogRoot ($day + '.ledger.json')
-    if(-not (Test-Path -LiteralPath $ledgerPath)){ continue }
+    if (-not (Test-Path -LiteralPath $ledgerPath)) { continue }
 
     $entriesJson = Get-Content -LiteralPath $ledgerPath -Raw
-    if([string]::IsNullOrWhiteSpace($entriesJson)){ continue }
+    if ([string]::IsNullOrWhiteSpace($entriesJson)) { continue }
     $entries = $entriesJson | ConvertFrom-Json
-    if(-not $entries){ continue }
+    if (-not $entries) { continue }
 
     # Map minute key -> entry (yyyy-MM-dd HH:mm)
     $map = @{}
-    foreach($e in $entries){ $map[$e.Minute] = $e }
+    foreach ($e in $entries) { $map[$e.Minute] = $e }
 
     # daemon badge
     $rootForStatus = Split-Path -Parent $PSCommandPath
@@ -939,7 +910,7 @@ function New-Heatmap {
     $badgeText = if ($ds.Running) { 'watching' } else { 'stopped' }
     if ($ds.Running -and $ds.AgeSeconds -ne $null -and $ds.AgeSeconds -gt 60) { $badgeText = 'watch (stale)' }
     $badgeClass = if ($ds.Running -and $badgeText -eq 'watching') { 'ok' } elseif ($badgeText -eq 'watch (stale)') { 'warn' } else { 'err' }
-    $badgeTip   = if ($ds.Running) { if ($ds.LastBeat) { "last beat $($ds.AgeSeconds)s ago" } else { 'no heartbeat yet' } } else { 'not running' }
+    $badgeTip = if ($ds.Running) { if ($ds.LastBeat) { "last beat $($ds.AgeSeconds)s ago" } else { 'no heartbeat yet' } } else { 'not running' }
 
     # which single pending minute should pulse (today only)
     $dayDate = [datetime]::ParseExact($day, 'yyyy-MM-dd', $null)
@@ -1000,8 +971,8 @@ controls{margin:8px 0 12px}
 
     # day picker + controls
     $picker = "<div class='controls'><select id='daypick' onchange=""location.href=this.value+'.html'"">"
-    foreach($d in $availableDays){
-      $sel = ''; if($d -eq $day){ $sel = ' selected' }
+    foreach ($d in $availableDays) {
+      $sel = ''; if ($d -eq $day) { $sel = ' selected' }
       $picker += "<option value='$d'$sel>$d</option>"
     }
     $picker += "</select>"
@@ -1015,26 +986,26 @@ controls{margin:8px 0 12px}
 
     # column labels
     $slots = [int](60 / $BucketMinutes)
-    $labels = @(); for($i=1; $i -le $slots; $i++){ $labels += ($i * $BucketMinutes) }
+    $labels = @(); for ($i = 1; $i -le $slots; $i++) { $labels += ($i * $BucketMinutes) }
     [void]$sb.AppendLine('<div class="hrow"><div class="hour"></div><div class="hcells">')
-    foreach($lab in $labels){ [void]$sb.AppendLine("<div class='hcell'>$lab</div>") }
+    foreach ($lab in $labels) { [void]$sb.AppendLine("<div class='hcell'>$lab</div>") }
     [void]$sb.AppendLine('</div></div>')
 
     # grid
-    for($h=0;$h -lt 24;$h++){
-      $rowStart = [datetime]::ParseExact("$day $h`:00","yyyy-MM-dd H\:mm",$null)
+    for ($h = 0; $h -lt 24; $h++) {
+      $rowStart = [datetime]::ParseExact("$day $h`:00", "yyyy-MM-dd H\:mm", $null)
       [void]$sb.AppendLine('<div class="row">')
       [void]$sb.AppendLine(('<div class="hour">{0:00}:00</div><div class="cells">' -f $h))
 
-      for($i=0;$i -lt $slots;$i++){
-        $t   = $rowStart.AddMinutes($i * $BucketMinutes)
+      for ($i = 0; $i -lt $slots; $i++) {
+        $t = $rowStart.AddMinutes($i * $BucketMinutes)
         $key = $t.ToString('yyyy-MM-dd HH:mm')
 
         $isPending = $t -gt $lastComplete
-        if($isPending){
-          $classes = @('cell','tip','pending')
+        if ($isPending) {
+          $classes = @('cell', 'tip', 'pending')
           # compare as strings to avoid DateTime Kind mismatches
-          if(-not $markedNext -and $nextMinuteForDayKey -ne $null -and $key -eq $nextMinuteForDayKey){
+          if (-not $markedNext -and $nextMinuteForDayKey -ne $null -and $key -eq $nextMinuteForDayKey) {
             $classes += 'nextup'
             $markedNext = $true
           }
@@ -1045,17 +1016,17 @@ controls{margin:8px 0 12px}
         }
 
         $x = $map[$key]
-        if(-not $x){
+        if (-not $x) {
           $tip = ("{0:HH:mm}  samples=0 latency=n/a signal=n/a" -f $t)
           [void]$sb.AppendLine("<div class='cell tip' data-tip='$tip' style='background:#bdbdbd'></div>")
           continue
         }
 
-        $color  = Get-CellColorHex $x.Status
-        $latTxt = if($x.MedianMs -ne $null){ ([int]$x.MedianMs).ToString() } else { 'n/a' }
-        $sigTxt = if($x.MinSig   -ne $null){ ([int]$x.MinSig).ToString()   } else { 'n/a' }
+        $color = Get-CellColorHex $x.Status
+        $latTxt = if ($x.MedianMs -ne $null) { ([int]$x.MedianMs).ToString() } else { 'n/a' }
+        $sigTxt = if ($x.MinSig -ne $null) { ([int]$x.MinSig).ToString() } else { 'n/a' }
         $statusTip = if ($x.MedianMs -eq $null -and $x.MinSig -eq $null) { '?' } else { $x.Status }
-        $tip    = ("{0:HH:mm}  status={1}  samples={2}  latency={3}ms  signal={4}%" -f $t,$statusTip,$x.Samples,$latTxt,$sigTxt)
+        $tip = ("{0:HH:mm}  status={1}  samples={2}  latency={3}ms  signal={4}%" -f $t, $statusTip, $x.Samples, $latTxt, $sigTxt)
 
         [void]$sb.AppendLine("<div class='cell tip' data-tip='$tip' style='background:$color'></div>")
       }
@@ -1097,59 +1068,22 @@ controls{margin:8px 0 12px}
   }
 }
 
-<# function Update-LedgerIndex {
-    # Resolve a stable script root (works for script/module/function/interactive)
-    $here =
-        if ($PSScriptRoot) { $PSScriptRoot }
-        elseif ($PSCommandPath) { Split-Path -Parent $PSCommandPath }
-        elseif ($MyInvocation.PSCommandPath) { Split-Path -Parent $MyInvocation.PSCommandPath }
-        elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path }
-        else { (Get-Location).Path }
 
-    $idxScript = Join-Path $here 'scripts\Update-LedgerIndex.ps1'
-
-    if (-not (Test-Path -LiteralPath $idxScript)) {
-        $msg = "{0:o}  Update-LedgerIndex: index script not found at {1}" -f (Get-Date), $idxScript
-        Write-Warning $msg
-        if ($LogRoot) {
-            Add-Content -LiteralPath (Join-Path $LogRoot 'daemon-errors.log') -Value $msg
-        }
-        return
-    }
-
-    # Throttle & rollover
-    if (-not $script:NextIndexAt) { $script:NextIndexAt = (Get-Date).AddMinutes(-1) }
-    $today = Get-Date -Format 'yyyy-MM-dd'
-
-    # Force once at midnight rollover
-    if ($script:LastDay -ne $today) {
-        & $idxScript
-        $script:LastDay    = $today
-        $script:NextIndexAt = (Get-Date).AddMinutes(5)
-        return
-    }
-
-    # Periodic refresh
-    if ((Get-Date) -ge $script:NextIndexAt) {
-        & $idxScript
-        $script:NextIndexAt = (Get-Date).AddMinutes(5)
-    }
-} #>
 
 function Update-LedgerIndex {
   try {
     $indexPath = Join-Path $LogRoot 'ledger-index.json'
-    $tmpPath   = "$indexPath.tmp"
+    $tmpPath = "$indexPath.tmp"
 
     $items = Get-ChildItem -Path $LogRoot -Filter "*.ledger.json" -File -ErrorAction SilentlyContinue |
-      Sort-Object Name |
-      ForEach-Object {
-        # Expect names like 2025-12-21.ledger.json
-        if ($_.BaseName -match '^\d{4}-\d{2}-\d{2}\.ledger$') {
-          $date = ($_.BaseName -replace '\.ledger$','')
-          [PSCustomObject]@{ date = $date; path = $_.Name }
-        }
-      } | Where-Object { $_ -ne $null }
+    Sort-Object Name |
+    ForEach-Object {
+      # Expect names like 2025-12-21.ledger.json
+      if ($_.BaseName -match '^\d{4}-\d{2}-\d{2}\.ledger$') {
+        $date = ($_.BaseName -replace '\.ledger$', '')
+        [PSCustomObject]@{ date = $date; path = $_.Name }
+      }
+    } | Where-Object { $_ -ne $null }
 
     # Write atomically
     $items | ConvertTo-Json -Depth 3 | Set-Content -Encoding utf8 -Path $tmpPath
@@ -1179,12 +1113,13 @@ function Run-Daemon {
       # keep ledgers and heatmaps fresh (today and previous N-1 days)
       Update-Ledger -Days $Days
       
-	  # update index (throttled + rollover-aware)
+      # update index (throttled + rollover-aware)
       Update-LedgerIndex
 	  
-	  New-Heatmap -Days $Days -BucketMinutes $BucketMinutes
+      New-Heatmap -Days $Days -BucketMinutes $BucketMinutes
     
-	} catch {
+    }
+    catch {
       $err = Join-Path $LogRoot 'daemon-errors.log'
       Add-Content -LiteralPath $err -Value ("{0:o}  {1}" -f (Get-Date), $_.Exception.Message)
     }
@@ -1194,11 +1129,11 @@ function Run-Daemon {
 }
 
 # ---------- command switchboard ----------
-if($Daemon){ Run-Daemon; exit }
-if($Sample){ Write-SampleRow; exit }
-if($Ledger){ Update-Ledger -Days $Days; exit }
-if($Heatmap){ New-Heatmap -Days $Days -BucketMinutes $BucketMinutes; exit }
-if($BackfillRssi){ Update-CsvRssi -Days $Days; exit }
+if ($Daemon) { Run-Daemon; exit }
+if ($Sample) { Write-SampleRow; exit }
+if ($Ledger) { Update-Ledger -Days $Days; exit }
+if ($Heatmap) { New-Heatmap -Days $Days -BucketMinutes $BucketMinutes; exit }
+if ($BackfillRssi) { Update-CsvRssi -Days $Days; exit }
 
 
 Write-Host "wifi-canary: use one of -Daemon, -Sample, -Ledger, -Heatmap (plus optional -Days, -EverySeconds, -BucketMinutes, -LogRoot)."

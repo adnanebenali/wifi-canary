@@ -7,9 +7,9 @@
  * Falls back to ../../logs/daemon-heartbeat.txt if heartbeat.json not present.
  */
 const el = sel => document.querySelector(sel);
-const livePill  = el('#live-pill');
-const notice    = el('#notice');
-const heatmap   = el('#heatmap');
+const livePill = el('#live-pill');
+const notice = el('#notice');
+const heatmap = el('#heatmap');
 
 const LOGS_BASE = new URL('../../logs/', window.location);
 const logUrl = (p) => new URL(p, LOGS_BASE).toString();
@@ -19,23 +19,23 @@ const logUrl = (p) => new URL(p, LOGS_BASE).toString();
 // ===== Added helpers (keep comments) =====
 const monthBand = document.getElementById('monthBand');
 
-function parseYMD(s){
+function parseYMD(s) {
   const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return null;
+  if (!m) return null;
   return { y: +m[1], m: +m[2], d: +m[3] };
 }
-function ymdToDate({y,m,d}){ return new Date(y, m-1, d); }
-function formatMonthTitle(ym){ 
-  const dt = ymdToDate({y: ym.y, m: ym.m, d: 1});
+function ymdToDate({ y, m, d }) { return new Date(y, m - 1, d); }
+function formatMonthTitle(ym) {
+  const dt = ymdToDate({ y: ym.y, m: ym.m, d: 1 });
   return dt.toLocaleString(undefined, { month: 'long', year: 'numeric' });
 }
-function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
+function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
 
 
-async function tintMonthBandPills(){
+async function tintMonthBandPills() {
   const pills = document.querySelectorAll('.month-band .day:not(.disabled)');
   // Remove prior tints
-  pills.forEach(p => p.classList.remove('day--red','day--orange','day--yellow','day--green','day--gray'));
+  pills.forEach(p => p.classList.remove('day--red', 'day--orange', 'day--yellow', 'day--green', 'day--gray'));
 
   // Fetch in parallel but don’t block UI; paint as results arrive
   await Promise.allSettled(Array.from(pills).map(async p => {
@@ -49,8 +49,8 @@ async function tintMonthBandPills(){
 }
 
 
-function renderMonthBand(selectedDateStr){
-  if (!dates.length){ monthBand.innerHTML = ''; return; }
+function renderMonthBand(selectedDateStr) {
+  if (!dates.length) { monthBand.innerHTML = ''; return; }
 
   const ym = parseYMD(selectedDateStr);
   const totalDays = daysInMonth(ym.y, ym.m);
@@ -60,8 +60,8 @@ function renderMonthBand(selectedDateStr){
   });
   const setForMonth = new Set(inThisMonth);
 
-  const prevMonth = (ym.m === 1)  ? { y: ym.y - 1, m: 12 } : { y: ym.y, m: ym.m - 1 };
-  const nextMonth = (ym.m === 12) ? { y: ym.y + 1, m:  1 } : { y: ym.y, m: ym.m + 1 };
+  const prevMonth = (ym.m === 1) ? { y: ym.y - 1, m: 12 } : { y: ym.y, m: ym.m - 1 };
+  const nextMonth = (ym.m === 12) ? { y: ym.y + 1, m: 1 } : { y: ym.y, m: ym.m + 1 };
 
   const prevHas = dates.some(d => { const p = parseYMD(d); return p.y === prevMonth.y && p.m === prevMonth.m; });
   const nextHas = dates.some(d => { const p = parseYMD(d); return p.y === nextMonth.y && p.m === nextMonth.m; });
@@ -69,39 +69,39 @@ function renderMonthBand(selectedDateStr){
   const prevBtn = `<button class="mb-nav" data-mb="prev" ${prevHas ? '' : 'disabled'}>◀</button>`;
   const nextBtn = `<button class="mb-nav" data-mb="next" ${nextHas ? '' : 'disabled'}>▶</button>`;
   //const title   = `<span class="mb-title">${formatMonthTitle({ y: ym.y, m: ym.m })}</span>`;
-  
+
   // Build day pills for 1..totalDays (enabled if we have data for that date)
   let daysHtml = '';
-  for (let d = 1; d <= totalDays; d++){
-    const ds = `${ym.y}-${String(ym.m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  for (let d = 1; d <= totalDays; d++) {
+    const ds = `${ym.y}-${String(ym.m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const enabled = setForMonth.has(ds);
     const cls = ['day', enabled ? '' : 'disabled', (ds === selectedDateStr ? 'current' : '')].filter(Boolean).join(' ');
     daysHtml += `<button class="${cls}" data-date="${ds}" ${enabled ? '' : 'disabled'}>${d}</button>`;
   }
 
 
-	// Build month dropdown for the current year (disable months with no data)
-	const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  // Build month dropdown for the current year (disable months with no data)
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-	// Which months in this year have any dates?
-	const monthsWithData = new Set(
-	  dates
-		.map(d => parseYMD(d))
-		.filter(p => p.y === ym.y)
-		.map(p => p.m)
-	);
+  // Which months in this year have any dates?
+  const monthsWithData = new Set(
+    dates
+      .map(d => parseYMD(d))
+      .filter(p => p.y === ym.y)
+      .map(p => p.m)
+  );
 
-	// Build the <select> options (1..12)
-	const monthOptions = Array.from({length:12}, (_,i) => {
-	  const m = i + 1;
-	  const label = `${MONTH_NAMES[i]} ${ym.y}`;
-	  const disabled = monthsWithData.has(m) ? '' : 'disabled';
-	  const selected = (m === ym.m) ? 'selected' : '';
-	  return `<option value="${m}" ${selected} ${disabled}>${label}</option>`;
-	}).join('');
+  // Build the <select> options (1..12)
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    const label = `${MONTH_NAMES[i]} ${ym.y}`;
+    const disabled = monthsWithData.has(m) ? '' : 'disabled';
+    const selected = (m === ym.m) ? 'selected' : '';
+    return `<option value="${m}" ${selected} ${disabled}>${label}</option>`;
+  }).join('');
 
-	// Dropdown markup (replaces the old title)
-	const monthDropSelector = `
+  // Dropdown markup (replaces the old title)
+  const monthDropSelector = `
 	  <label class="mb-dropdown">
 		<span class="sr-only">Month</span>
 		<select id="monthSelect" aria-label="Select month in ${ym.y}">
@@ -113,29 +113,29 @@ function renderMonthBand(selectedDateStr){
   monthBand.innerHTML = `${prevBtn}${monthDropSelector}${daysHtml}${nextBtn}`;
 
 
-	// Wire the change handler AFTER injecting the strip
-	const monthSelect = monthBand.querySelector('#monthSelect');
-	if (monthSelect){
-	  monthSelect.addEventListener('change', () => {
-		const newMonth = Number(monthSelect.value);
+  // Wire the change handler AFTER injecting the strip
+  const monthSelect = monthBand.querySelector('#monthSelect');
+  if (monthSelect) {
+    monthSelect.addEventListener('change', () => {
+      const newMonth = Number(monthSelect.value);
 
-		// Find all available dates in the chosen month of the current year
-		const candidates = dates.filter(d => {
-		  const p = parseYMD(d);
-		  return p.y === ym.y && p.m === newMonth;
-		});
+      // Find all available dates in the chosen month of the current year
+      const candidates = dates.filter(d => {
+        const p = parseYMD(d);
+        return p.y === ym.y && p.m === newMonth;
+      });
 
-		if (candidates.length){
-		  // Pick the latest day in that month
-		  const target = candidates[candidates.length - 1];
-		  pos = dates.indexOf(target);
-		  selectDay(target, true);
-		  renderMonthBand(target);        // refresh pills & highlight
-		}else{
-		  // No data for that month (should be disabled anyway), noop
-		}
-	  });
-	}
+      if (candidates.length) {
+        // Pick the latest day in that month
+        const target = candidates[candidates.length - 1];
+        pos = dates.indexOf(target);
+        selectDay(target, true);
+        renderMonthBand(target);        // refresh pills & highlight
+      } else {
+        // No data for that month (should be disabled anyway), noop
+      }
+    });
+  }
 
   // Tint visible, enabled pills based on day worst status 
   if (typeof tintMonthBandPills === 'function') {
@@ -161,7 +161,7 @@ function renderMonthBand(selectedDateStr){
         const p = parseYMD(d);
         return p.y === targetYM.y && p.m === targetYM.m;
       });
-      if (candidates.length){
+      if (candidates.length) {
         const target = candidates[candidates.length - 1];
         pos = dates.indexOf(target);
         selectDay(target, true);
@@ -172,21 +172,21 @@ function renderMonthBand(selectedDateStr){
 }
 
 
-function currentLocalHHMM(){
+function currentLocalHHMM() {
   const now = new Date();
   return { hh: now.getHours(), mm: now.getMinutes() };
 }
 
 
-function statusColor(s){
-  s = String(s||'').toLowerCase();
-  if (s==='greener') return '#6AB572'; //'#85E3AE'; //'#1fb86a'; //'#2bd67b';
-  if (s==='green')   return '#437348'; //'#57945D'; //'#437348';
+function statusColor(s) {
+  s = String(s || '').toLowerCase();
+  if (s === 'greener') return '#6AB572'; //'#85E3AE'; //'#1fb86a'; //'#2bd67b';
+  if (s === 'green') return '#437348'; //'#57945D'; //'#437348';
   //if (s==='yellowish')	return '#A2AD54';
-  if (s==='yellow')  return '#EAC75D';
-  if (s==='orange')  return '#FF7F27';
-  if (s==='red')     return '#ED1C24';
-  if (s==='gray' || s==='grey') return '#495a84';
+  if (s === 'yellow') return '#EAC75D';
+  if (s === 'orange') return '#FF7F27';
+  if (s === 'red') return '#ED1C24';
+  if (s === 'gray' || s === 'grey') return '#495a84';
   return '#6da3ff';
 }
 
@@ -196,7 +196,7 @@ let dates = [];           // ["2025-11-06", ...]
 let pos = -1;             // current index in dates[]
 let liveTimer = null;     // polling handle when viewing "today"
 
-const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 async function fetchJson(url) {
   const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now());
@@ -208,40 +208,40 @@ async function fetchText(url) {
   if (!r.ok) throw new Error(`${url} → ${r.status}`);
   return r.text();
 }
-function isRecentHeartbeat(iso, horizonSec=45){
-  try{
+function isRecentHeartbeat(iso, horizonSec = 45) {
+  try {
     const ts = new Date(iso).getTime();
-    return (Date.now() - ts) <= horizonSec*1000;
-  }catch{ return false; }
+    return (Date.now() - ts) <= horizonSec * 1000;
+  } catch { return false; }
 }
 
-async function loadIndex(){
-  try{
+async function loadIndex() {
+  try {
     index = await fetchJson(logUrl('ledger-index.json'));
-    if(!Array.isArray(index)) throw new Error('ledger-index.json is not an array');
-  }catch(e){
+    if (!Array.isArray(index)) throw new Error('ledger-index.json is not an array');
+  } catch (e) {
     console.error('Failed to load ledger-index.json', e);
     showNotice(`Could not load <code>` + logUrl('ledger-index.json') + `</code>. Make sure the daemon generates it.`, 'err');
     index = [];
   }
-  dates = index.map(x=>x.date).sort();
-  if (dates.length){
+  dates = index.map(x => x.date).sort();
+  if (dates.length) {
     // Default to the last date (today or latest available)
-    pos = dates.length-1;
+    pos = dates.length - 1;
     await selectDay(dates[pos], /*userInitiated*/false);
-  renderMonthBand(dates[pos]);
-  }else{
+    renderMonthBand(dates[pos]);
+  } else {
     renderEmpty();
   }
 }
 
-async function selectDay(date, userInitiated){
+async function selectDay(date, userInitiated) {
 
   hideNotice();
   stopLivePoll();
 
-  const entry = index.find(x=>x.date===date);
-  if(!entry){
+  const entry = index.find(x => x.date === date);
+  if (!entry) {
     showNotice(`No ledger entry for <b>${date}</b>.`, 'warn');
     renderEmpty();
     return;
@@ -249,37 +249,37 @@ async function selectDay(date, userInitiated){
 
   const entryPath = entry.path;   // ✅ ADD THIS
 
-  try{
+  try {
     const ledger = await fetchJson(logUrl(entryPath));   // ✅ uses entryPath
     renderLedger(ledger, date);
-  }catch(e){
+  } catch (e) {
     console.error('Failed to load ledger', e);
     showNotice(`Could not load <code>${logUrl(entryPath)}</code>.`, 'err');
     renderEmpty();
     return;
   }
 
-  const isLatest = (date === dates[dates.length-1]);
+  const isLatest = (date === dates[dates.length - 1]);
   if (isLatest) startLivePoll(date);
 }
 
 
-function showNotice(html, kind='warn'){
+function showNotice(html, kind = 'warn') {
   notice.hidden = false;
   notice.innerHTML = `<span class="badge ${kind}">${kind.toUpperCase()}</span> ` + html;
 }
-function hideNotice(){ notice.hidden = true; notice.innerHTML=''; }
+function hideNotice() { notice.hidden = true; notice.innerHTML = ''; }
 
-function renderEmpty(){
+function renderEmpty() {
   heatmap.innerHTML = `<div class="card">
     <h3>No data</h3>
     <div class="small">Waiting for ledgers…</div>
   </div>`;
 }
 
-function safe(x, d='—'){ return (x===undefined||x===null||x==='') ? d : x; }
+function safe(x, d = '—') { return (x === undefined || x === null || x === '') ? d : x; }
 
-function escAttr(value){
+function escAttr(value) {
   if (value == null) return '';
   return String(value)
     .replace(/&/g, '&amp;')
@@ -290,15 +290,15 @@ function escAttr(value){
 // Shared color→label mapping used by both legend and tooltips
 const STATUS_LABELS = {
   greener: 'Excellent',
-  green:   'Good',
-  yellow:  'Fair or Degrading..',
-  orange:  'Degraded',
-  red:     'Bad!',
-  grey:    'Not enough data',
+  green: 'Good',
+  yellow: 'Fair or Degrading..',
+  orange: 'Degraded',
+  red: 'Bad!',
+  grey: 'Not enough data',
 };
 
 // Quick lookup helper
-function GetStatusLabel(key){
+function GetStatusLabel(key) {
   if (!key) return key;
   const norm = String(key).toLowerCase();
   return STATUS_LABELS[norm] ?? key; // fallback to raw if unknown
@@ -310,61 +310,57 @@ function GetStatusLabel(key){
 // Cache so we don't refetch when hopping months
 const dayStatusCache = new Map(); // key: 'YYYY-MM-DD' -> 'red'|'orange'|'yellow'|'green'|'gray'
 
-function normalizeStatus(s){
+function normalizeStatus(s) {
   if (!s) return null;
   const x = String(s).toLowerCase();
-  if (x.includes('red'))    return 'red';
+  if (x.includes('red')) return 'red';
   if (x.includes('orange')) return 'orange';
   //if (x.includes('yellowish')) return 'yellowish';
   if (x.includes('yellow')) return 'yellow';
-  if (x.startsWith('green'))return 'green';     // matches green / greener
+  if (x.startsWith('green')) return 'green';     // matches green / greener
   return null;
 }
 
 // Decide day tint from per-minute ledger (array form)
-function computeDayTintFromArray(ledgerArray){
+function computeDayTintFromArray(ledgerArray) {
   let hasRed = false, hasOrange = false, hasYellow = false, hasGreen = false;
   let reds = 0, oranges = 0, yellows = 0;
   let evaluatedCount = 0;
-  
-  for (const row of ledgerArray){
+
+  for (const row of ledgerArray) {
     const st = normalizeStatus(row?.Status ?? row?.status);
     if (!st) continue;
     evaluated = true;
-	evaluatedCount += 1;
-    if (st === 'red')
-	{		
-		reds += 1;
-		hasRed = (reds > 5) ? true : false;
-	}
-    else if (st === 'orange')
-	{		
-		oranges += 1;
-		hasOrange = (oranges > 5) ? true : false;
+    evaluatedCount += 1;
+    if (st === 'red') {
+      reds += 1;
+      hasRed = (reds > 5) ? true : false;
     }
-	else if (st === 'yellow')
-	{	
-		yellows += 1;
-		hasYellow = (yellows > 5) ? true : false;
+    else if (st === 'orange') {
+      oranges += 1;
+      hasOrange = (oranges > 5) ? true : false;
     }
-	else if (st === 'green')
-	{		
-		hasGreen = true;
+    else if (st === 'yellow') {
+      yellows += 1;
+      hasYellow = (yellows > 5) ? true : false;
     }
-	
-	if (hasRed) break; // worst possible
+    else if (st === 'green') {
+      hasGreen = true;
+    }
+
+    if (hasRed) break; // worst possible
   }
   if (!evaluated) return 'gray';
-  if (hasRed)     return 'red';
-  if (hasOrange)  return 'orange';
-  if (hasYellow)  return 'yellow';
-  if (hasGreen)   return 'green';
+  if (hasRed) return 'red';
+  if (hasOrange) return 'orange';
+  if (hasYellow) return 'yellow';
+  if (hasGreen) return 'green';
   return 'gray';
 }
 
-async function fetchDayTint(dateStr){
+async function fetchDayTint(dateStr) {
   if (dayStatusCache.has(dateStr)) return dayStatusCache.get(dateStr);
-  try{
+  try {
     const resp = await fetch(logUrl(`${dateStr}.ledger.json`), { cache: 'no-store' });
     if (!resp.ok) { dayStatusCache.set(dateStr, null); return null; }
     const data = await resp.json();
@@ -386,54 +382,54 @@ async function fetchDayTint(dateStr){
  * We don't assume strict schema; we try to display sensible aggregates.
  * Expected common fields (if present): totals, devices, hours, cells, etc.
  */
-function renderLedger(ledger, date){
+function renderLedger(ledger, date) {
   heatmap.innerHTML = '';
 
   // -------------------------
   // ARRAY-LEDGER BRANCH (per-minute rows)
   // -------------------------
-  if (Array.isArray(ledger)){
+  if (Array.isArray(ledger)) {
     // Build a 24x60 grid of rows for this day
     const grid = Array.from({ length: 24 }, () => Array(60).fill(null));
     let seen = 0;
-    for (const row of ledger){
+    for (const row of ledger) {
       const m = String(row.Minute || row.minute || '').match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2})/);
       if (!m) continue;
       const hh = parseInt(m[2], 10), mm = parseInt(m[3], 10);
-      if (hh >= 0 && hh < 24 && mm >= 0 && mm < 60){
+      if (hh >= 0 && hh < 24 && mm >= 0 && mm < 60) {
         grid[hh][mm] = row; seen++;
       }
     }
-    
-	const bssidSet = new Set();   
-	const bssidStats = new Map();  // key: bssid → { sumSig, sumRssi, countSig, countRssi }
+
+    const bssidSet = new Set();
+    const bssidStats = new Map();  // key: bssid → { sumSig, sumRssi, countSig, countRssi }
 
 
     // Minute header 1..60
-// Minute header 1..60 (aligns with rows)
-const minuteHeader = (() => {
-  let cols = '';
-  for (let m = 0; m < 60; m++) cols += `<div class="mincell">${m + 1}</div>`;
-  return `
+    // Minute header 1..60 (aligns with rows)
+    const minuteHeader = (() => {
+      let cols = '';
+      for (let m = 0; m < 60; m++) cols += `<div class="mincell">${m + 1}</div>`;
+      return `
     <div class="minute-header">
       <div class="label"> </div>
       <div class="mins">${cols}</div>
       <div class="rollup-head">Roll-up</div>
     </div>`;
-})();
+    })();
 
 
-// Status legend (uses statusColor for swatches)
-const legend = (() => {
-  const items = Object.entries(STATUS_LABELS);
-  const parts = items.map(([key, label]) => `
+    // Status legend (uses statusColor for swatches)
+    const legend = (() => {
+      const items = Object.entries(STATUS_LABELS);
+      const parts = items.map(([key, label]) => `
     <span style="display:inline-flex;align-items:center;gap:6px">
       <i style="width:12px;height:12px;border-radius:3px;display:inline-block;background:${statusColor(key)};border:1px solid var(--border)"></i>
       ${label}
     </span>
   `).join('');
-  return `<div class="small" style="display:flex;gap:10px;align-items:center;margin:0 0 8px 0">Status: ${parts}</div>`;
-})();
+      return `<div class="small" style="display:flex;gap:10px;align-items:center;margin:0 0 8px 0">Status: ${parts}</div>`;
+    })();
 
 
     const now = currentLocalHHMM();
@@ -442,121 +438,121 @@ const legend = (() => {
     // Build one row per hour: hour label + roll-up + 60 minute cells
     const hoursHtml = grid.map((mins, h) => {
       // roll-up
-	  let seenCount = 0, evalCount = 0, good = 0, bad = 0;
-	  let hasRed = false, hasOrange = false, hasYellow = false;
+      let seenCount = 0, evalCount = 0, good = 0, bad = 0;
+      let hasRed = false, hasOrange = false, hasYellow = false;
 
-      for (let m = 0; m < 60; m++){
+      for (let m = 0; m < 60; m++) {
         const r = mins[m];
         if (r) seenCount++;
         const st = r && (r.Status || r.status);
-        if (st && !st.includes('grey')){
+        if (st && !st.includes('grey')) {
           evalCount++;
           const sl = String(st).toLowerCase();
           if (sl.startsWith('green')) good++;
-          if (sl.includes('yellow') || sl.includes('orange') || sl.includes('red')){
+          if (sl.includes('yellow') || sl.includes('orange') || sl.includes('red')) {
             bad++;
             if (sl.includes('red')) {
-				hasRed = true;
-			}
-			else if (sl.includes('orange')) {
-				hasOrange = true;
-			}
-			else {
-				hasYellow = true;
-			}
+              hasRed = true;
+            }
+            else if (sl.includes('orange')) {
+              hasOrange = true;
+            }
+            else {
+              hasYellow = true;
+            }
           }
         }
-		
+
       }
 
       const goodPct = evalCount ? Math.round(100 * good / evalCount) : 0;
       const goodPctIfZero = goodPct == 0 ? 'zero' : '';
-      const badPct  = evalCount ? Math.round(100 * bad  / evalCount) : 0;
+      const badPct = evalCount ? Math.round(100 * bad / evalCount) : 0;
       //const badClass = hasRed ? 'red' : (badPct > 0 ? 'orange' : '');
       const badClass = hasRed ? 'red' : (badPct > 0 ? (hasOrange ? 'orange' : 'yellow') : '');
 
-	  // if no minutes seen/evaluated, hide rollup entirely
-	  const hideRollup = (seenCount === 0 && evalCount === 0);
+      // if no minutes seen/evaluated, hide rollup entirely
+      const hideRollup = (seenCount === 0 && evalCount === 0);
 
       // 60 minute cells
       const cells = mins.map((row, m) => {
-        
-		const med     = row ? (row.MedianMs ?? row.median ?? null) : null;
-		const sig     = row ? (row.MinSig ?? null) : null;
-		const samples = row ? (row.Samples ?? row.samples ?? 0) : 0;
-		
-		let status = (row && (row.Status || row.status)) || null;
-		
-		// If no latency or 0ms or no samples → treat as “not enough data”
-		if (!med || med === 0 || !samples) {
-			if (!sig || sig == 0) {
-				status = 'grey';
-			}
-		}
 
-		const bssid = row ? (row.Bssid ?? row.BSSID ?? null) : null;
-		const didRoam = !!(row && (row.Roaming ?? row.roaming));
+        const med = row ? (row.MedianMs ?? row.median ?? null) : null;
+        const sig = row ? (row.MinSig ?? null) : null;
+        const samples = row ? (row.Samples ?? row.samples ?? 0) : 0;
+
+        let status = (row && (row.Status || row.status)) || null;
+
+        // If no latency or 0ms or no samples → treat as “not enough data”
+        if (!med || med === 0 || !samples) {
+          if (!sig || sig == 0) {
+            status = 'grey';
+          }
+        }
+
+        const bssid = row ? (row.Bssid ?? row.BSSID ?? null) : null;
+        const didRoam = !!(row && (row.Roaming ?? row.roaming));
         const roamed = didRoam ? ' (Roamed)' : null;
-		
-		// pull Rssi from ledger row (could be null on older days)
-		const rssi = row ? (row.Rssi ?? row.rssi ?? null) : null;
 
-		if (bssid) {
+        // pull Rssi from ledger row (could be null on older days)
+        const rssi = row ? (row.Rssi ?? row.rssi ?? null) : null;
+
+        if (bssid) {
           bssidSet.add(String(bssid));   // <-- track unique BSSID
         }
-		
-		if (bssid != null) {
-		  const key  = String(bssid);
-		  const stat = bssidStats.get(key) || {
-			sumSig:   0,
-			sumRssi:  0,
-			countSig: 0,
-			countRssi: 0,
-		  };
 
-		  if (sig != null && sig !== 0) {
-			stat.sumSig   += Number(sig);
-			stat.countSig += 1;
-		  }
+        if (bssid != null) {
+          const key = String(bssid);
+          const stat = bssidStats.get(key) || {
+            sumSig: 0,
+            sumRssi: 0,
+            countSig: 0,
+            countRssi: 0,
+          };
 
-		  if (rssi != null && rssi !== 0) {
-			stat.sumRssi   += Number(rssi);
-			stat.countRssi += 1;
-		  }
+          if (sig != null && sig !== 0) {
+            stat.sumSig += Number(sig);
+            stat.countSig += 1;
+          }
 
-		  bssidStats.set(key, stat);
-		}
+          if (rssi != null && rssi !== 0) {
+            stat.sumRssi += Number(rssi);
+            stat.countRssi += 1;
+          }
 
-		
-		const statusLabel = status ? GetStatusLabel(status) : null;
+          bssidStats.set(key, stat);
+        }
+
+
+        const statusLabel = status ? GetStatusLabel(status) : null;
         const tipParts = [
           `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
           row ? `samples=${row.Samples ?? row.samples ?? '—'}` : null,
           row ? `latency=${row.MedianMs ?? row.median ?? '—'}ms` : null,
           row ? `loss=${row.WorstLoss ?? '—'}%` : null,
           row ? `signal=${row.MinSig ?? '—'}%` : null,
-		  row ? `rssi=${row.Rssi ?? '—'} dBm` : null,
+          row ? `rssi=${row.Rssi ?? '—'} dBm` : null,
           row ? `bssid=${bssid ?? '—'} ${roamed ?? ''}` : null,
-		  row ? `status=${statusLabel ?? status ?? '—'}` : null,
+          row ? `status=${statusLabel ?? status ?? '—'}` : null,
         ].filter(Boolean);
-        const tip  = tipParts.join('&nbsp;  .  &nbsp;');
-        const bg     = status ? statusColor(status) : 'transparent';
+        const tip = tipParts.join('&nbsp;  .  &nbsp;');
+        const bg = status ? statusColor(status) : 'transparent';
         const border = status ? '1px solid var(--border)' : '1px solid #2a3b67';
         const nextup = (isLatestDay && h === now.hh && m === (now.mm + 1)) ? ' nextup' : '';
-		
-		// show a small center glyph when roaming
-		const roamAttr = didRoam ? ' data-roam="1"' : '';
-		const roamHtml = didRoam ? '<span class="roam" aria-hidden="true">✦</span>' : '';
-		const bssidAttr = bssid   ? ` data-bssid="${escAttr(bssid)}"` : '';
 
-		return `<div class="min tip${nextup}"${roamAttr}${bssidAttr} data-tip="${tip}" style="--bg:${bg};--bd:${border}">${roamHtml}</div>`;
+        // show a small center glyph when roaming
+        const roamAttr = didRoam ? ' data-roam="1"' : '';
+        const roamHtml = didRoam ? '<span class="roam" aria-hidden="true">✦</span>' : '';
+        const bssidAttr = bssid ? ` data-bssid="${escAttr(bssid)}"` : '';
 
-  
+        return `<div class="min tip${nextup}"${roamAttr}${bssidAttr} data-tip="${tip}" style="--bg:${bg};--bd:${border}">${roamHtml}</div>`;
+
+
       }).join('');
 
-		return `
+      return `
 		  <div class="row">
-			<div class="small" style="width:36px;text-align:right;color:var(--muted)">${String(h).padStart(2,'0')}:00</div>
+			<div class="small" style="width:36px;text-align:right;color:var(--muted)">${String(h).padStart(2, '0')}:00</div>
 			<div class="gridline">${cells}</div>
 			${hideRollup ? '' : `
 			  <div class="rollup">
@@ -571,38 +567,38 @@ const legend = (() => {
 
     const bssidList = Array.from(bssidSet).sort();
 
-	const bssidBadgesHtml = bssidList.length
-	  ? bssidList.map(b => {
-      const stat = bssidStats.get(String(b));
+    const bssidBadgesHtml = bssidList.length
+      ? bssidList.map(b => {
+        const stat = bssidStats.get(String(b));
 
-      const avgSig  = stat && stat.countSig
-        ? Math.round(stat.sumSig / stat.countSig)
-        : null;
+        const avgSig = stat && stat.countSig
+          ? Math.round(stat.sumSig / stat.countSig)
+          : null;
 
-      const avgRssi = stat && stat.countRssi
-        ? Math.round(stat.sumRssi / stat.countRssi)
-        : null;
+        const avgRssi = stat && stat.countRssi
+          ? Math.round(stat.sumRssi / stat.countRssi)
+          : null;
 
-      const sigLabel  = (avgSig  != null ? `${avgSig}%`     : '—');
-      const rssiLabel = (avgRssi != null ? `${avgRssi} dBm` : '—');
+        const sigLabel = (avgSig != null ? `${avgSig}%` : '—');
+        const rssiLabel = (avgRssi != null ? `${avgRssi} dBm` : '—');
 
-      const sampleCount =
-        stat ? Math.max(stat.countSig || 0, stat.countRssi || 0) : 0;
+        const sampleCount =
+          stat ? Math.max(stat.countSig || 0, stat.countRssi || 0) : 0;
 
-      // optional title for hover
-      const title = sampleCount
-        ? `Avg signal ${sigLabel}, avg Rssi ${rssiLabel} over ${sampleCount} minute(s)`
-        : 'No samples recorded';
+        // optional title for hover
+        const title = sampleCount
+          ? `Avg signal ${sigLabel}, avg Rssi ${rssiLabel} over ${sampleCount} minute(s)`
+          : 'No samples recorded';
 
-      // simple qualitative band based on signal % (as before)
-      let level = '';
-      if (avgSig != null){
-        if (avgSig >= 70)      level = 'good';
-        else if (avgSig >= 40) level = 'med';
-        else                   level = 'low';
-      }
+        // simple qualitative band based on signal % (as before)
+        let level = '';
+        if (avgSig != null) {
+          if (avgSig >= 70) level = 'good';
+          else if (avgSig >= 40) level = 'med';
+          else level = 'low';
+        }
 
-      return `
+        return `
         <button
           class="bssid-badge"
           data-bssid="${escAttr(b)}"
@@ -618,8 +614,8 @@ const legend = (() => {
           </span>
         </button>
       `;
-    }).join('')
-  : `<div class="small bssid-empty">No BSSID data yet.</div>`;
+      }).join('')
+      : `<div class="small bssid-empty">No BSSID data yet.</div>`;
 
 
 
@@ -655,10 +651,10 @@ const legend = (() => {
 
 
     // BSSID list
-	    // Hover over BSSID badge → dim all other minutes,
+    // Hover over BSSID badge → dim all other minutes,
     // highlight only minutes with that BSSID.
-    if (bssidList.length){
-      const badges   = card.querySelectorAll('.bssid-badge');
+    if (bssidList.length) {
+      const badges = card.querySelectorAll('.bssid-badge');
       const minCells = card.querySelectorAll('.min');
 
       badges.forEach(badge => {
@@ -667,7 +663,7 @@ const legend = (() => {
         badge.addEventListener('mouseenter', () => {
           minCells.forEach(cell => {
             const cellBssid = cell.getAttribute('data-bssid');
-            if (cellBssid && cellBssid === bssid){
+            if (cellBssid && cellBssid === bssid) {
               cell.classList.add('min--highlight');
               cell.classList.remove('min--dim');
             } else {
@@ -690,9 +686,9 @@ const legend = (() => {
 
     // Summary from grid/ledger
     const minutesSeen = grid.flat().filter(Boolean).length;
-    const greens = ledger.filter(r => String(r.Status||'').toLowerCase().startsWith('green')).length;
-    const reds   = ledger.filter(r => String(r.Status||'').toLowerCase().includes('red')).length;
-    const yell   = ledger.filter(r => String(r.Status||'').toLowerCase().startsWith('yellow')).length;
+    const greens = ledger.filter(r => String(r.Status || '').toLowerCase().startsWith('green')).length;
+    const reds = ledger.filter(r => String(r.Status || '').toLowerCase().includes('red')).length;
+    const yell = ledger.filter(r => String(r.Status || '').toLowerCase().startsWith('yellow')).length;
 
     const sum = document.createElement('div');
     sum.className = 'card';
@@ -715,8 +711,8 @@ const legend = (() => {
   // -------------------------
   const totals = ledger.totals || ledger.summary || {};
   const deviceCount = totals.devices ?? (ledger.devices?.length ?? ledger.deviceCount ?? undefined);
-  const pingCount   = totals.pings ?? ledger.pingCount ?? undefined;
-  const upPct       = totals.uptimePct ?? totals.upPct ?? undefined;
+  const pingCount = totals.pings ?? ledger.pingCount ?? undefined;
+  const upPct = totals.uptimePct ?? totals.upPct ?? undefined;
 
   const top = document.createElement('div');
   top.className = 'card';
@@ -731,27 +727,27 @@ const legend = (() => {
   `;
 
   let gridHtml = '';
-  if (Array.isArray(ledger.cells)){
+  if (Array.isArray(ledger.cells)) {
     const rows = ledger.cells.length;
     const cols = Math.max(...ledger.cells.map(r => Array.isArray(r) ? r.length : 0), 0);
     gridHtml = `<div class="card"><h3>Heatmap</h3>
       <div style="display:grid;grid-template-columns:repeat(${cols},minmax(6px,16px));gap:2px">
         ${ledger.cells.map(row => Array.isArray(row) ? row.map(val => {
-          const v = Number(val) || 0;
-          const a = Math.max(0, Math.min(1, v));
-          const hue = Math.round(140 * a);
-          return `<div title="${v}" style="width:12px;height:12px;border-radius:2px;background:hsl(${60+hue} 90% ${20+55*a}%);"></div>`;
-        }).join('') : '').join('')}
+      const v = Number(val) || 0;
+      const a = Math.max(0, Math.min(1, v));
+      const hue = Math.round(140 * a);
+      return `<div title="${v}" style="width:12px;height:12px;border-radius:2px;background:hsl(${60 + hue} 90% ${20 + 55 * a}%);"></div>`;
+    }).join('') : '').join('')}
       </div>
     </div>`;
   }
 
   let devTable = '';
-  if (Array.isArray(ledger.devices)){
-    const rows = ledger.devices.slice(0,100).map(d => `<tr>
-      <td>${safe(d.id||d.mac||d.name)}</td>
-      <td>${safe(d.status||d.state)}</td>
-      <td>${safe(d.uptimePct??d.uptime)}</td>
+  if (Array.isArray(ledger.devices)) {
+    const rows = ledger.devices.slice(0, 100).map(d => `<tr>
+      <td>${safe(d.id || d.mac || d.name)}</td>
+      <td>${safe(d.status || d.state)}</td>
+      <td>${safe(d.uptimePct ?? d.uptime)}</td>
     </tr>`).join('');
     devTable = `<div class="card">
       <h3>Devices <span class="small">(showing up to 100)</span></h3>
@@ -767,36 +763,36 @@ const legend = (() => {
 
 
 
-async function startLivePoll(date){
-  async function pollOnce(){
+async function startLivePoll(date) {
+  async function pollOnce() {
     // Prefer JSON heartbeat; fall back to txt
     let live = false;
-    try{
+    try {
       const hb = await fetchJson(logUrl('heartbeat.json'));
       live = isRecentHeartbeat(hb.ts);
-    }catch{
+    } catch {
       // fallback
-      try{
+      try {
         const txt = await fetchText(logUrl('daemon-heartbeat.txt'));
         const last = txt.trim().split(/\r?\n/).pop();
         live = isRecentHeartbeat(last);
-      }catch{ /* ignore */ }
+      } catch { /* ignore */ }
     }
     livePill.hidden = !live;
 
     // Refresh today's ledger to update visual
-    const entry = index.find(x=>x.date===date);
-    if (entry){
-      try{
+    const entry = index.find(x => x.date === date);
+    if (entry) {
+      try {
         const ledger = await fetchJson(logUrl(entry.path));
         renderLedger(ledger, date);
-      }catch(e){ /* keep previous render */ }
+      } catch (e) { /* keep previous render */ }
     }
   }
   await pollOnce();
   liveTimer = setInterval(pollOnce, 15000);
 }
-function stopLivePoll(){
+function stopLivePoll() {
   if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
   livePill.hidden = true;
 }

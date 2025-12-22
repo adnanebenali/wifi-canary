@@ -6,7 +6,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $hbPath = Join-Path $LogRoot "heartbeat.json"
-$tmp    = "$hbPath.tmp"
+$tmp = "$hbPath.tmp"
 
 @{ ts = (Get-Date).ToString("o") } | ConvertTo-Json | Set-Content -Encoding utf8 -Path $tmp
 Move-Item -Force $tmp $hbPath
