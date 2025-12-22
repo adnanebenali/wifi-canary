@@ -1,6 +1,6 @@
 # Wi-FiBad: Latency and Signal Measurement Overview
 
-This document explains how **wifibad.ps1** measures network latency and Wi-Fi signal strength, what targets are used, and why.
+This document explains how **wifi-canary.ps1** measures network latency and Wi-Fi signal strength, what targets are used, and why.
 
 ---
 
