@@ -101,7 +101,7 @@ Issues and PRs are welcome. If you’re adding features, please include:
 - a short “why”
 - sample data (or a screenshot) showing the change in the dashboard
 
-## Future ideas / TODO
+## Future ideas / TODO 🥚🐣 🚀
 
 1) **Package wifi-canary as a double-clickable installer (EXE/MSI):**
 
