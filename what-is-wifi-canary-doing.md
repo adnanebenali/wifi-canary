@@ -157,16 +157,3 @@ This is useful for a quick share (no JS app) and also acts as a sanity check tha
 
 ---
 
-## 7) Suggested cleanups (optional but recommended)
-
-If you want the repo to be easier to maintain:
-
-1. **Fix the loss naming mismatch**
-   - Rename CSV columns to `Ping*_LossCount` (and update ledger/dashboard), *or*
-   - Write percent into the CSV (0/50/100 for Count=2) so `WorstLoss >= 100` makes sense.
-
-2. **Remove the duplicate early `Get-MinuteStatus` + `Get-CellColorHex`**
-   - Keep one policy function (the unified one) to avoid future confusion.
-
-3. **Document the dashboard’s base paths**
-   - Dashboard expects `logs/` at repo root when served from repo root.
