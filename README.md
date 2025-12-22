@@ -12,7 +12,7 @@ Run it on your laptop.
 - Provides a HTML dashboard that dynamically reads from daily ledgers
 - and more if you'd like to contribute to it!
 
-![Alt text](/doc/image-2.png)
+![Alt text](doc/image-2.png)
 
 ## Quick start (Windows)
 
@@ -24,10 +24,10 @@ Run it on your laptop.
 - Enable Location services on your laptop 
 - in order for the collector to pick up the BSSID (AP) you're roaming to and its RSSI.
   
-    ![Alt text](/doc/image.png)
+    ![Alt text](doc/image.png)
 
 - When the tool runs later, you can verify that it is using location only when it runs:
-    ![Alt text](/doc/image-1.png)
+    ![Alt text](doc/image-1.png)
 
 ### Run the collector
 - Double-click 'reload-wifi-canary.cmd'
