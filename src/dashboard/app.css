@@ -1,0 +1,427 @@
+
+:root {
+  --bg: #0b1020; 
+  --fg: #e8edf7;
+  --frost: #25366B;  --frost-mid: #25366B66;  --frost-end: #25366B00;
+  --muted: #9fb0d0;
+  --accent: #6da3ff;
+  --card: #121a33;
+  --grid-gap: 6px;
+  --pill-live: #2bd67b;
+  --warn: #ffb347;
+  --err: #ff6b6b;
+  --ok: #9ae6b4;
+  --border: #223055;
+  --chip: #1b2647;
+  --radius: 14px;
+  --rollup-w: 160px; /* width of the roll-up panel */
+  --rollup-col-w: 32px;   /* width for Minutes seen / evaluated */
+  --rollup-badge-w: 56px; /* width for % badges */
+
+  --minute-gap: 2px; /* spacing between minute cells & header */
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font:14px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--fg);
+}
+.header{
+  position:sticky; top:0; z-index:10;
+  background:linear-gradient(180deg,var(--frost) 0%,var(--frost-mid) 40%,var(--frost-end) 100%);
+  backdrop-filter:saturate(1.1) blur(6px);
+  padding:12px 16px 6px 16px;
+  border-bottom:1px solid var(--border);
+}
+.title{font-size:18px; font-weight:700; letter-spacing:.2px; display:flex; align-items:center; gap:10px}
+.logo {
+  height: 30px; 
+  width: auto;
+}
+.pill{
+  display:inline-block; padding:2px 8px; border-radius:999px;
+  background:var(--pill-live); color:#001b0a; font-weight:700; font-size:12px;
+  box-shadow:0 0 0 0 rgba(43,214,123,.6); animation:pulse 2.2s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(43,214,123,.5)}
+  70%{box-shadow:0 0 0 10px rgba(43,214,123,0)}
+  100%{box-shadow:0 0 0 0 rgba(43,214,123,0)}
+}
+
+/* .nav{display:flex; align-items:center; gap:8px; margin-top:8px}
+.nav .spacer{flex:1}
+.nav-btn{
+  background:var(--chip);
+  border:1px solid var(--border);
+  color:var(--fg); padding:6px 10px; border-radius:10px; cursor:pointer;
+}
+.nav-btn:disabled{opacity:.4; cursor:not-allowed}
+.current-day{min-width:130px; text-align:center; font-weight:600; color:var(--muted)}
+
+.dropdown select{
+  background:var(--chip); color:var(--fg);
+  border:1px solid var(--border); border-radius:10px; padding:6px 10px;
+} */
+
+.notice{
+  margin:14px 16px 0 16px; padding:10px 12px; border-radius:10px;
+  border:1px solid var(--border); background:#16203b;
+  color:var(--muted);
+}
+.footer{padding:12px 16px 20px 16px; color:var(--muted)}
+
+.heatmap{padding:16px; display:grid; gap:var(--grid-gap)}
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:12px; box-shadow:0 6px 18px rgba(0,0,0,.18);
+}
+.card h3{margin:0 0 8px 0; font-size:14px; color:#cfe0ff}
+
+.table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums}
+.table th,.table td{border-bottom:1px solid var(--border); padding:6px 8px}
+.table th{color:#aecdff; text-align:left}
+.badge{padding:2px 8px; border-radius:999px; font-weight:700}
+.badge.ok{background:rgba(154,230,180,.2); color:var(--ok)}
+.badge.warn{background:rgba(255,179,71,.15); color:var(--warn)}
+.badge.err{background:rgba(255,107,107,.15); color:var(--err)}
+.small{color:var(--muted); font-size:12px}
+code{background:var(--chip); padding:3px 6px; border-radius:6px; border:1px solid var(--border)}
+
+
+/* ===== Added styles (keep comments) ===== */
+.minute-header{
+  display:flex; align-items:flex-end; gap:6px;
+  padding:6px 0 4px 0;
+  border-bottom:1px solid var(--border);
+  margin-bottom:8px;
+}
+.minute-header .label{ width:36px; text-align:right; color:var(--muted); font-size:12px; padding-right:4px }
+.minute-header .mins{ display:grid; grid-template-columns:repeat(60,12px); gap: var(--minute-gap); }
+.minute-header .mincell{ width:12px; text-align:center; font-variant-numeric:tabular-nums; color:var(--muted); font-size:10px; opacity:.65 }
+.minute-header .rollup-head{ width:var(--rollup-w); color:var(--muted); font-size:12px; padding-left:6px }
+
+
+.row{ display:flex; align-items:center; gap:6px }
+ /* already tight */
+
+
+
+/* Make the roll-up a 4-column grid with fixed widths */
+.rollup{
+	    margin-left: 20px;           /* <— new */
+
+  display: grid;
+  grid-template-columns:
+    var(--rollup-col-w)     /* Minutes seen  */
+    var(--rollup-col-w)     /* Minutes eval  */
+    var(--rollup-badge-w)   /* % Good badge  */
+    var(--rollup-badge-w);  /* % Bad  badge  */
+  column-gap: 8px;          /* space between columns */
+  row-gap: 4px;
+  align-items: center;
+  /* keep your existing margin-left if you set one (e.g., 20px) */
+}
+
+/* Numeric chips: fixed width + right-aligned + tabular digits */
+.rollup .chip:nth-child(1),
+.rollup .chip:nth-child(2){
+  width: var(--rollup-col-w);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1; /* for fonts that respect this */
+}
+
+
+
+@keyframes nextupPulse {
+  0% { box-shadow: 0 0 0 0 rgba(109,163,255, .6); }
+  70%{ box-shadow: 0 0 0 8px rgba(109,163,255, 0); }
+  100%{ box-shadow: 0 0 0 0 rgba(109,163,255, 0); }
+}
+.min.nextup {
+  position: relative;
+  animation: nextupPulse 2.2s ease-out infinite;
+  outline: 2px solid #6da3ff;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.month-band {
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  margin: 10px 16px 0 16px;
+}
+.month-band .mb-nav {
+  background: var(--chip); border:1px solid var(--border); border-radius:10px; padding:6px 8px; cursor:pointer; color:var(--fg);
+}
+.month-band .mb-title { font-weight:700; color:#cfe0ff; margin: 0 6px; }
+.month-band .day {
+  width: 28px; height: 28px; border-radius: 8px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border);
+  background: #16203b;
+  color: var(--muted);
+  cursor: pointer;
+}
+.month-band .day.enabled { color: var(--fg); background: var(--chip); }
+.month-band .day.enabled.current { background: #20315c; }
+.month-band .day.enabled:hover { filter: brightness(1.1); }
+
+/* Month band day tints */
+.month-band .day{ position:relative; transition:background-color .15s, border-color .15s; }
+.month-band .day--green { background: rgba(43,214,123,.10); border-color: rgba(43,214,123,.35); color: rgba(43,214,123,1.0);}
+.month-band .day--yellow{ background: rgba(255,201,14,.10); border-color: rgba(255,201,14,.35); color: rgba(255,201,14,1.0);}
+.month-band .day--orange{ background: rgba(255,127,39,.10); border-color: rgba(255,127,39,.35); color: rgba(255,127,39,1.0);}
+.month-band .day--red   { background: rgba(237,28,36,.10); border-color: rgba(237,28,36,.35);   color: rgba(237,28,36,1.0);}
+.month-band .day--gray  { background: rgba(128,128,128,.08); border-color: rgba(128,128,128,.25); }
+.month-band .day {
+  transition: border-color 2s, border-width .15s, box-shadow .15s;
+}
+.month-band .day.current {
+  border-width: 2px;                 /* thicker */
+  border-color: currentColor;        /* keep same hue as text/fill */
+
+}
+
+
+
+
+
+
+/* minimalist small badges */
+/*.badge{display:inline-block;padding:1px 6px;border-radius:999px;font-weight:700;font-size:10px;line-height:1.2}*/
+
+/* Badges: fixed width + centered */
+.badge{
+  display: inline-block;
+  width: var(--rollup-badge-w);
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.badge--good.zero{background:rgba(43,214,123,.05);color:#cccccc;border:1px solid rgba(43,214,123,.1)}
+.badge--good{background:rgba(43,214,123,.12);color:#2bd67b;border:1px solid rgba(43,214,123,.35)}
+.badge--bad.yellow{background:rgba(234,199,93,.10);color:#EAC75D;border:1px solid rgba(234,199,93,.35)}
+.badge--bad.orange{background:rgba(255,127,39,.10);color:#FF7F27;border:1px solid rgba(255,127,39,.35)}
+.badge--bad.red{background:rgba(237,28,36,.10);color:#ED1C24;border:1px solid rgba(237,28,36,.35)}
+
+.gridline{
+  display:grid;
+  grid-template-columns:repeat(60,12px);
+  gap: var(--minute-gap);
+}
+
+/* === Minute cell base (move size/shape from inline to CSS; colors via CSS vars) === */
+.min{
+  width:12px; height:12px;
+  border-radius:2px;
+  background: var(--bg, transparent);
+  border: var(--bd, 1px solid #2a3b67);
+
+/* ensure relative positioning for pseudo-element overlay */  
+  position: relative;
+
+}
+
+/* center the ⇄ glyph for roaming minutes */
+/* .min[data-roam="1"]::after { */
+  /* content: "✦"; */
+  /* font-size: 10px; */
+  /* font-weight: 600; */
+  /* color: var(--roam-fg, #fff); */
+  /* position: absolute; */
+  /* inset: 0; */
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* pointer-events: none; */
+  /* text-shadow: 0 0 2px rgba(0,0,0,0.6); */
+  /* mix-blend-mode: screen; brightens on dark, darkens on light backgrounds */
+  /* opacity: 0.9; */
+/* } */
+
+/* inline roaming glyph (no pseudo-element conflicts) */
+.min .roam {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0,0,0,0.6);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+
+
+/* === Lightweight tooltip (PowerShell-style) === */
+.tip{ position: relative; }
+.tip:hover::after{
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  top: 16px;
+  background: #495a84; /*#111;*/
+  color: #fff;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 20;
+  box-shadow: 0 4px 18px rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.tip:hover::before{
+  content: "";
+  position:absolute;
+  left: 6px;
+  top: 14px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  /* border-bottom: 5px solid #111; */
+  border-bottom: 5px solid #495a84; /* match bubble bg instead of #111 */
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
+}
+
+/* Month band dropdown (replaces static title) */
+.mb-dropdown select{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font: inherit;
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin: 0 8px;
+}
+.mb-dropdown select:disabled{ opacity: .6 }
+
+/* Optional: hide the label text but keep it for screen readers */
+.sr-only{
+  position:absolute;
+  width:1px; height:1px;
+  padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+
+
+
+
+/* Layout: minutes + rollups + BSSID panel */
+.heatmap-body{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+  margin-top:4px;
+}
+
+.heatmap-hours{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  flex:1;
+  min-width:0;
+}
+
+/* Right-hand BSSID list */
+.bssid-panel{
+  min-width:220px;
+  max-width:280px;
+  border-left:1px solid var(--border);
+  padding-left:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.bssid-panel-title{
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  font-size:10px;
+  opacity:0.8;
+}
+
+.bssid-badges{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  max-height:400px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+
+.bssid-badge{
+  background:var(--chip);
+  border:1px solid var(--border);
+  color:var(--fg);
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:11px;
+  cursor:pointer;
+  white-space:nowrap;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+}
+
+.bssid-badge-main{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.bssid-badge-signal{
+  min-width:2.5em;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  font-size:10px;
+  padding:1px 6px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.10);
+  opacity:0.9;
+}
+
+/* optional soft color hint based on avg signal */
+.bssid-badge-signal--good{
+  background:rgba(154,230,180,0.1);   /* uses your --ok hue */
+  border-color:var(--ok);
+}
+
+.bssid-badge-signal--med{
+  background:rgba(255,179,71,0.08);   /* uses --warn hue */
+  border-color:var(--warn);
+}
+
+.bssid-badge-signal--low{
+  background:rgba(255,107,107,0.08);  /* uses --err hue */
+  border-color:var(--err);
+}
+
+
+.bssid-badge:hover{
+  border-color:var(--accent);
+}
+
+/* Dim / highlight minutes when filtering by BSSID */
+.min.min--dim{
+  opacity:0.2;
+  filter:grayscale(0.4);
+}
+
+.min.min--highlight{
+  outline:1px solid var(--accent);
+  /*outline-offset:1px;*/
+}
+
+
+
