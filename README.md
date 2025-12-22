@@ -28,6 +28,7 @@ with measurable patterns.
 ## Quick start (Windows)
 
 ### Requirements
+
 - Windows 10/11
 - PowerShell 7+ recommended
 - A Wi‑Fi adapter 🙂 (works best on laptops)
@@ -48,6 +49,7 @@ indicator shows it’s only used while sampling.
 - `logs/` – generated artifacts (CSV, ledgers, heatmaps, heartbeat)
 
 ### 1) Run the collector (daemon)
+
 From File Explorer, double‑click:
 
 - `reload-wifi-canary.cmd`
@@ -55,17 +57,19 @@ From File Explorer, double‑click:
 This starts (or restarts) the daemon loop (sampling + ledger/index + heatmap generation).
 
 ### 2) Start the dashboard web server
+
 Double‑click:
 
 - `start-web-server.cmd`
 
 Then open:
 
-- http://localhost:8080/src/dashboard/
+- <http://localhost:8080/src/dashboard/>
 
 > Tip: if you see a directory listing at `http://localhost:8080/`, it’s normal — the dashboard is under `/src/dashboard/`.
 
 ### 3) Stop the collector
+
 Double‑click:
 
 - `stop-wifi-canary.cmd`
@@ -93,5 +97,33 @@ If wifi-canary doesn’t show data:
 ## Contributing
 
 Issues and PRs are welcome. If you’re adding features, please include:
+
 - a short “why”
 - sample data (or a screenshot) showing the change in the dashboard
+
+## Future ideas / TODO
+
+1) **Package wifi-canary as a double-clickable installer (EXE/MSI):**
+
+   - No PowerShell or cmd interaction required for end users
+   - Installer sets up:
+     - background collector (scheduled task or service)
+     - local web server
+   - Dashboard becomes the primary UI:
+     - start / stop / restart collector
+     - show status & logs
+     - view heatmaps and ledgers
+
+2) **Add ability to annotate a minute cell in the heatmap:**
+
+   - To leave debugging notes
+   - Observations
+   - Configuration changes
+
+3) Visual summaries indicating:
+
+   - AP RSSI per day
+   - AP RSSI per week
+   - AP RSSI all-time
+   - Worst APIs by RSSI, Signal %, Latency
+   - Number of Roaming events per day, per week, per month
