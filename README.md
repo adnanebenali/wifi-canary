@@ -1,4 +1,4 @@
-# Wi‑Fi Canary 🐦📶
+# Wi‑Fi Canary 🦜📶
 
 Minute‑level Wi‑Fi health logger + HTML dashboard for diagnosing flaky home/office networks **from the client side**
 (signal/RSSI, BSSID, roaming events, and simple latency indicators). Run it on your laptop and correlate “felt pain”
