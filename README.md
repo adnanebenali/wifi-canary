@@ -33,13 +33,19 @@ with measurable patterns.
 - A Wi‑Fi adapter 🙂 (works best on laptops)
 - Enable location services if you want to track AP roaming (important for coverage and dropout discovery)
 
-## ✋Location services note (Windows)
+### ✋Location services note (Windows)
 
 On some Windows versions/configurations, **BSSID** and/or **RSSI** from `netsh wlan show interfaces`
 can be missing unless Location Services are enabled.
 
 If you care about roaming and AP identification, enable Location Services for the device and confirm the
 indicator shows it’s only used while sampling.
+
+### Folder layout
+
+- `src/daemon/` – PowerShell collector + helper scripts/shortcuts
+- `src/dashboard/` – static dashboard (HTML/CSS/JS + optional logo)
+- `logs/` – generated artifacts (CSV, ledgers, heatmaps, heartbeat)
 
 ### 1) Run the collector (daemon)
 From File Explorer, double‑click:
@@ -64,11 +70,25 @@ Double‑click:
 
 - `stop-wifi-canary.cmd`
 
-## Folder layout
+### 4) First run checklist (if something doesn’t work)
 
-- `src/daemon/` – PowerShell collector + helper scripts/shortcuts
-- `src/dashboard/` – static dashboard (HTML/CSS/JS + optional logo)
-- `logs/` – generated artifacts (CSV, ledgers, heatmaps, heartbeat)
+If wifi-canary doesn’t show data:
+
+1. Confirm PowerShell version:
+   pwsh --version   (7.x recommended)
+
+2. Try running the daemon once manually:
+   pwsh -File src/daemon/wifi-canary.ps1
+
+3. Check logs folder:
+   logs/daemon-errors.log
+
+4. If BSSID/RSSI are missing:
+   - Enable Windows Location Services
+
+5. If dashboard shows no data:
+   - Ensure logs/ledger-index.json exists
+   - Ensure web server is serving repo root
 
 ## Contributing
 
