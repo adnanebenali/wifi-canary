@@ -58,6 +58,7 @@ if (-not (Test-Path -LiteralPath $LogRoot)) { New-Item -ItemType Directory -Path
 
 $ErrLog = Join-Path $LogRoot 'daemon-errors.log'
 $Beat = Join-Path $LogRoot 'daemon-heartbeat.txt'
+$BeatJson = Join-Path $LogRoot 'heartbeat.json'
 Add-Content -LiteralPath $ErrLog -Value ("{0:o}  bootstrap OK (PS {1})  scriptFile={2}" -f (Get-Date), $PSVersionTable.PSVersion, $__scriptFile)
 
 # Optional: avoid weird “â€¦” characters in console
@@ -553,7 +554,7 @@ function Update-LedgerDay {
   $csv = Join-Path $LogRoot ($Day + '.csv')
   $out = Join-Path $LogRoot ($Day + '.ledger.json')
 
-  Write-Host "Update-LedgerDay: processing $($Day + '.ledger.json')..."
+  Write-Verbose "Update-LedgerDay: processing $($Day + '.ledger.json')..."
 
   if (-not (Test-Path -LiteralPath $csv)) { Set-Content -LiteralPath $out -Value '[]' -Encoding UTF8; return }
 
@@ -1123,7 +1124,11 @@ function Run-Daemon {
       $err = Join-Path $LogRoot 'daemon-errors.log'
       Add-Content -LiteralPath $err -Value ("{0:o}  {1}" -f (Get-Date), $_.Exception.Message)
     }
-    Add-Content -LiteralPath (Join-Path $LogRoot 'daemon-heartbeat.txt') -Value ("{0:o} alive" -f (Get-Date))
+    $hbTs = (Get-Date).ToString('o')
+    # Keep a small heartbeat signal for the dashboard (overwrite so it doesn't grow)
+    Set-Content -LiteralPath $Beat -Value ("{0} alive" -f $hbTs) -Encoding UTF8
+    # Also write JSON for robust parsing in the dashboard
+    Set-Content -LiteralPath $BeatJson -Value (([pscustomobject]@{ ts = $hbTs }) | ConvertTo-Json -Compress) -Encoding UTF8
     Start-Sleep -Seconds $EverySeconds
   }
 }

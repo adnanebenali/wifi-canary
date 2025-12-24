@@ -763,38 +763,72 @@ function renderLedger(ledger, date) {
 
 
 
+function setLivePill(isLive) {
+  // Always show pill; switch state
+  livePill.hidden = false;
+
+  if (isLive) {
+    livePill.textContent = 'LIVE';
+    livePill.classList.add('live');
+    livePill.classList.remove('offline');
+  } else {
+    livePill.textContent = 'OFFLINE';
+    livePill.classList.add('offline');
+    livePill.classList.remove('live');
+  }
+}
+
+// Accept either a pure ISO string, or "ISO alive"
+function parseHeartbeatTs(s) {
+  if (!s) return null;
+  const firstToken = String(s).trim().split(/\s+/)[0]; // take the ISO part
+  // Basic sanity: ISO-ish
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(firstToken)) return null;
+  return firstToken;
+}
+
 async function startLivePoll(date) {
   async function pollOnce() {
-    // Prefer JSON heartbeat; fall back to txt
     let live = false;
+
+    // Prefer JSON heartbeat
     try {
       const hb = await fetchJson(logUrl('heartbeat.json'));
-      live = isRecentHeartbeat(hb.ts);
+      const ts = parseHeartbeatTs(hb?.ts);
+      live = ts ? isRecentHeartbeat(ts, 60) : false; // 60s horizon reduces flicker
     } catch {
-      // fallback
+      // Fall back to txt heartbeat
       try {
         const txt = await fetchText(logUrl('daemon-heartbeat.txt'));
-        const last = txt.trim().split(/\r?\n/).pop();
-        live = isRecentHeartbeat(last);
-      } catch { /* ignore */ }
+        const lastLine = txt.trim().split(/\r?\n/).pop();
+        const ts = parseHeartbeatTs(lastLine);
+        live = ts ? isRecentHeartbeat(ts, 60) : false;
+      } catch {
+        live = false;
+      }
     }
-    livePill.hidden = !live;
 
-    // Refresh today's ledger to update visual
+    setLivePill(live);
+
+    // Refresh today's ledger
     const entry = index.find(x => x.date === date);
     if (entry) {
       try {
         const ledger = await fetchJson(logUrl(entry.path));
         renderLedger(ledger, date);
-      } catch (e) { /* keep previous render */ }
+      } catch { /* keep previous render */ }
     }
   }
+
   await pollOnce();
   liveTimer = setInterval(pollOnce, 15000);
 }
+
 function stopLivePoll() {
   if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
-  livePill.hidden = true;
+  // Don’t hide: show OFFLINE when you navigate away or stop polling
+  setLivePill(false);
 }
+
 
 window.addEventListener('DOMContentLoaded', loadIndex);
