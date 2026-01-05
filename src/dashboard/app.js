@@ -49,28 +49,165 @@ async function tintMonthBandPills() {
 }
 
 
+// function renderMonthBand(selectedDateStr) {
+//   if (!dates.length) { monthBand.innerHTML = ''; return; }
+
+//   // If selected day isn't in our data (e.g., Jan 2026 with no logs yet),
+//   // clamp to the latest available date.
+//   // if (!dates.includes(selectedDateStr)) {
+//   //   const fallback = dates[dates.length - 1];
+//   //   selectedDateStr = fallback;
+//   //   pos = dates.indexOf(fallback);      // keep global position consistent
+//   //   // optional but usually desired to keep the rest of the UI in sync:
+//   //   if (typeof selectDay === 'function') selectDay(fallback, true);
+//   // }
+
+//   const ym = parseYMD(selectedDateStr);
+//   const totalDays = daysInMonth(ym.y, ym.m);
+//   const inThisMonth = dates.filter(d => {
+//     const p = parseYMD(d);
+//     return p.y === ym.y && p.m === ym.m;
+//   });
+//   const setForMonth = new Set(inThisMonth);
+
+//   const prevMonth = (ym.m === 1) ? { y: ym.y - 1, m: 12 } : { y: ym.y, m: ym.m - 1 };
+//   const nextMonth = (ym.m === 12) ? { y: ym.y + 1, m: 1 } : { y: ym.y, m: ym.m + 1 };
+
+//   const prevHas = dates.some(d => { const p = parseYMD(d); return p.y === prevMonth.y && p.m === prevMonth.m; });
+//   const nextHas = dates.some(d => { const p = parseYMD(d); return p.y === nextMonth.y && p.m === nextMonth.m; });
+
+//   const prevBtn = `<button class="mb-nav" data-mb="prev" ${prevHas ? '' : 'disabled'}>◀</button>`;
+//   const nextBtn = `<button class="mb-nav" data-mb="next" ${nextHas ? '' : 'disabled'}>▶</button>`;
+//   //const title   = `<span class="mb-title">${formatMonthTitle({ y: ym.y, m: ym.m })}</span>`;
+
+//   // Build day pills for 1..totalDays (enabled if we have data for that date)
+//   let daysHtml = '';
+//   for (let d = 1; d <= totalDays; d++) {
+//     const ds = `${ym.y}-${String(ym.m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+//     const enabled = setForMonth.has(ds);
+//     const cls = ['day', enabled ? '' : 'disabled', (ds === selectedDateStr ? 'current' : '')].filter(Boolean).join(' ');
+//     daysHtml += `<button class="${cls}" data-date="${ds}" ${enabled ? '' : 'disabled'}>${d}</button>`;
+//   }
+
+
+//   // Build month dropdown for the current year (disable months with no data)
+//   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+//   // Which months in this year have any dates?
+//   const monthsWithData = new Set(
+//     dates
+//       .map(d => parseYMD(d))
+//       .filter(p => p.y === ym.y)
+//       .map(p => p.m)
+//   );
+
+//   // Build the <select> options (1..12)
+//   const monthOptions = Array.from({ length: 12 }, (_, i) => {
+//     const m = i + 1;
+//     const label = `${MONTH_NAMES[i]} ${ym.y}`;
+//     const disabled = monthsWithData.has(m) ? '' : 'disabled';
+//     const selected = (m === ym.m) ? 'selected' : '';
+//     return `<option value="${m}" ${selected} ${disabled}>${label}</option>`;
+//   }).join('');
+
+//   // Dropdown markup (replaces the old title)
+//   const monthDropSelector = `
+// 	  <label class="mb-dropdown">
+// 		<span class="sr-only">Month</span>
+// 		<select id="monthSelect" aria-label="Select month in ${ym.y}">
+// 		  ${monthOptions}
+// 		</select>
+// 	  </label>
+// 	`;
+
+//   monthBand.innerHTML = `${prevBtn}${monthDropSelector}${daysHtml}${nextBtn}`;
+
+
+//   // Wire the change handler AFTER injecting the strip
+//   const monthSelect = monthBand.querySelector('#monthSelect');
+//   if (monthSelect) {
+//     monthSelect.addEventListener('change', () => {
+//       const newMonth = Number(monthSelect.value);
+
+//       // Find all available dates in the chosen month of the current year
+//       const candidates = dates.filter(d => {
+//         const p = parseYMD(d);
+//         return p.y === ym.y && p.m === newMonth;
+//       });
+
+//       if (candidates.length) {
+//         // Pick the latest day in that month
+//         const target = candidates[candidates.length - 1];
+//         pos = dates.indexOf(target);
+//         selectDay(target, true);
+//         renderMonthBand(target);        // refresh pills & highlight
+//       } else {
+//         // No data for that month (should be disabled anyway), noop
+//       }
+//     });
+//   }
+
+//   // Tint visible, enabled pills based on day worst status 
+//   if (typeof tintMonthBandPills === 'function') {
+//     tintMonthBandPills();
+//   }
+
+//   // Click day → select
+//   monthBand.querySelectorAll('.day:not(.disabled)').forEach(btn => {
+//     btn.addEventListener('click', () => {
+//       const d = btn.getAttribute('data-date');
+//       pos = dates.indexOf(d);
+//       selectDay(d, true);
+//       renderMonthBand(d); // refresh highlight after navigation
+//     });
+//   });
+
+//   // Prev/next month navigation
+//   monthBand.querySelectorAll('.mb-nav').forEach(btn => {
+//     btn.addEventListener('click', () => {
+//       const dir = btn.getAttribute('data-mb');
+//       const targetYM = (dir === 'prev') ? prevMonth : nextMonth;
+//       const candidates = dates.filter(d => {
+//         const p = parseYMD(d);
+//         return p.y === targetYM.y && p.m === targetYM.m;
+//       });
+//       if (candidates.length) {
+//         const target = candidates[candidates.length - 1];
+//         pos = dates.indexOf(target);
+//         selectDay(target, true);
+//         renderMonthBand(target); // re-render strip for new month
+//       }
+//     });
+//   });
+// }
+
 function renderMonthBand(selectedDateStr) {
   if (!dates.length) { monthBand.innerHTML = ''; return; }
 
+  // Ensure dates are sorted ascending (important for pos navigation)
+  // If you're 100% sure already sorted, you can remove this.
+  // dates.sort(); // only if safe in your app
+
+  // Clamp selectedDateStr to an actual available date
+  if (!dates.includes(selectedDateStr)) {
+    selectedDateStr = dates[dates.length - 1]; // latest available
+    pos = dates.indexOf(selectedDateStr);
+    if (typeof selectDay === 'function') selectDay(selectedDateStr, true);
+  } else {
+    pos = dates.indexOf(selectedDateStr);
+  }
+
   const ym = parseYMD(selectedDateStr);
   const totalDays = daysInMonth(ym.y, ym.m);
+
+  // Dates in this visible month
   const inThisMonth = dates.filter(d => {
     const p = parseYMD(d);
     return p.y === ym.y && p.m === ym.m;
   });
   const setForMonth = new Set(inThisMonth);
 
-  const prevMonth = (ym.m === 1) ? { y: ym.y - 1, m: 12 } : { y: ym.y, m: ym.m - 1 };
-  const nextMonth = (ym.m === 12) ? { y: ym.y + 1, m: 1 } : { y: ym.y, m: ym.m + 1 };
-
-  const prevHas = dates.some(d => { const p = parseYMD(d); return p.y === prevMonth.y && p.m === prevMonth.m; });
-  const nextHas = dates.some(d => { const p = parseYMD(d); return p.y === nextMonth.y && p.m === nextMonth.m; });
-
-  const prevBtn = `<button class="mb-nav" data-mb="prev" ${prevHas ? '' : 'disabled'}>◀</button>`;
-  const nextBtn = `<button class="mb-nav" data-mb="next" ${nextHas ? '' : 'disabled'}>▶</button>`;
-  //const title   = `<span class="mb-title">${formatMonthTitle({ y: ym.y, m: ym.m })}</span>`;
-
-  // Build day pills for 1..totalDays (enabled if we have data for that date)
+  // --- Day pills (same as you had) ---
   let daysHtml = '';
   for (let d = 1; d <= totalDays; d++) {
     const ds = `${ym.y}-${String(ym.m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -79,98 +216,136 @@ function renderMonthBand(selectedDateStr) {
     daysHtml += `<button class="${cls}" data-date="${ds}" ${enabled ? '' : 'disabled'}>${d}</button>`;
   }
 
-
-  // Build month dropdown for the current year (disable months with no data)
+  // --- Month dropdown: ONLY months that exist in dates[] (across years) ---
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  // Which months in this year have any dates?
-  const monthsWithData = new Set(
-    dates
-      .map(d => parseYMD(d))
-      .filter(p => p.y === ym.y)
-      .map(p => p.m)
-  );
+  // Build unique list of available months from dates[], in chronological order
+  const monthKeys = [];
+  const monthKeySet = new Set();
+  for (const d of dates) {
+    const p = parseYMD(d);
+    const key = `${p.y}-${String(p.m).padStart(2, '0')}`; // YYYY-MM
+    if (!monthKeySet.has(key)) {
+      monthKeySet.add(key);
+      monthKeys.push(key);
+    }
+  }
 
-  // Build the <select> options (1..12)
-  const monthOptions = Array.from({ length: 12 }, (_, i) => {
-    const m = i + 1;
-    const label = `${MONTH_NAMES[i]} ${ym.y}`;
-    const disabled = monthsWithData.has(m) ? '' : 'disabled';
-    const selected = (m === ym.m) ? 'selected' : '';
-    return `<option value="${m}" ${selected} ${disabled}>${label}</option>`;
+  const currentMonthKey = `${ym.y}-${String(ym.m).padStart(2, '0')}`;
+
+  const monthOptions = monthKeys.map(key => {
+    const [yy, mm] = key.split('-');
+    const y = Number(yy);
+    const m = Number(mm);
+    const label = `${MONTH_NAMES[m - 1]} ${y}`;
+    const selected = (key === currentMonthKey) ? 'selected' : '';
+    return `<option value="${key}" ${selected}>${label}</option>`;
   }).join('');
 
-  // Dropdown markup (replaces the old title)
   const monthDropSelector = `
-	  <label class="mb-dropdown">
-		<span class="sr-only">Month</span>
-		<select id="monthSelect" aria-label="Select month in ${ym.y}">
-		  ${monthOptions}
-		</select>
-	  </label>
-	`;
+    <label class="mb-dropdown">
+      <span class="sr-only">Month</span>
+      <select id="monthSelect" aria-label="Select month">
+        ${monthOptions}
+      </select>
+    </label>
+  `;
+
+  // --- Prev/Next DAY navigation buttons ---
+  const prevDisabled = (pos <= 0) ? 'disabled' : '';
+  const nextDisabled = (pos >= dates.length - 1) ? 'disabled' : '';
+
+  const prevBtn = `<button class="mb-nav" data-nav="prevDay" ${prevDisabled}>◀</button>`;
+  const nextBtn = `<button class="mb-nav" data-nav="nextDay" ${nextDisabled}>▶</button>`;
 
   monthBand.innerHTML = `${prevBtn}${monthDropSelector}${daysHtml}${nextBtn}`;
 
-
-  // Wire the change handler AFTER injecting the strip
+  // Month dropdown change: jump to latest day in that chosen month
   const monthSelect = monthBand.querySelector('#monthSelect');
   if (monthSelect) {
     monthSelect.addEventListener('change', () => {
-      const newMonth = Number(monthSelect.value);
-
-      // Find all available dates in the chosen month of the current year
-      const candidates = dates.filter(d => {
-        const p = parseYMD(d);
-        return p.y === ym.y && p.m === newMonth;
-      });
-
+      const chosenKey = monthSelect.value; // YYYY-MM
+      const candidates = dates.filter(d => d.startsWith(chosenKey + '-'));
       if (candidates.length) {
-        // Pick the latest day in that month
-        const target = candidates[candidates.length - 1];
+        const target = candidates[candidates.length - 1]; // latest day in that month
         pos = dates.indexOf(target);
         selectDay(target, true);
-        renderMonthBand(target);        // refresh pills & highlight
-      } else {
-        // No data for that month (should be disabled anyway), noop
+        renderMonthBand(target);
       }
     });
   }
 
-  // Tint visible, enabled pills based on day worst status 
-  if (typeof tintMonthBandPills === 'function') {
-    tintMonthBandPills();
-  }
+  // Tint pills (keep your existing hook)
+  if (typeof tintMonthBandPills === 'function') tintMonthBandPills();
 
-  // Click day → select
+  // Day pill click -> select
   monthBand.querySelectorAll('.day:not(.disabled)').forEach(btn => {
     btn.addEventListener('click', () => {
       const d = btn.getAttribute('data-date');
       pos = dates.indexOf(d);
       selectDay(d, true);
-      renderMonthBand(d); // refresh highlight after navigation
+      renderMonthBand(d);
     });
   });
 
-  // Prev/next month navigation
+  // Prev/Next day click
   monthBand.querySelectorAll('.mb-nav').forEach(btn => {
     btn.addEventListener('click', () => {
-      const dir = btn.getAttribute('data-mb');
-      const targetYM = (dir === 'prev') ? prevMonth : nextMonth;
-      const candidates = dates.filter(d => {
-        const p = parseYMD(d);
-        return p.y === targetYM.y && p.m === targetYM.m;
-      });
-      if (candidates.length) {
-        const target = candidates[candidates.length - 1];
-        pos = dates.indexOf(target);
+      const dir = btn.getAttribute('data-nav');
+      if (dir === 'prevDay' && pos > 0) {
+        const target = dates[pos - 1];
+        pos = pos - 1;
         selectDay(target, true);
-        renderMonthBand(target); // re-render strip for new month
+        renderMonthBand(target);
+      } else if (dir === 'nextDay' && pos < dates.length - 1) {
+        const target = dates[pos + 1];
+        pos = pos + 1;
+        selectDay(target, true);
+        renderMonthBand(target);
       }
     });
   });
 }
 
+function wireDayNavKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    // Avoid hijacking typing in inputs/selects/textareas
+    const t = e.target;
+    const tag = (t && t.tagName) ? t.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || t?.isContentEditable) return;
+
+    const key = e.key;
+
+    const goPrev = () => {
+      if (pos > 0) {
+        const target = dates[pos - 1];
+        pos--;
+        selectDay(target, true);
+        renderMonthBand(target);
+      }
+    };
+
+    const goNext = () => {
+      if (pos < dates.length - 1) {
+        const target = dates[pos + 1];
+        pos++;
+        selectDay(target, true);
+        renderMonthBand(target);
+      }
+    };
+
+    // < and > plus arrow keys
+    if (key === '<' || key === ',' || key === 'ArrowLeft') {
+      // Note: key === ',' catches non-shift comma. If you ONLY want '<', remove ','.
+      e.preventDefault();
+      goPrev();
+    } else if (key === '>' || key === '.' || key === 'ArrowRight') {
+      // Same note: '.' is non-shift dot; remove if you only want '>'.
+      e.preventDefault();
+      goNext();
+    }
+  });
+}
 
 function currentLocalHHMM() {
   const now = new Date();
@@ -233,6 +408,8 @@ async function loadIndex() {
   } else {
     renderEmpty();
   }
+
+  wireDayNavKeyboard();
 }
 
 async function selectDay(date, userInitiated) {

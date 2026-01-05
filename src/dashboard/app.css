@@ -403,6 +403,101 @@ code {
 
 }
 
+/* Month dropdown wrapper */
+.month-band .mb-dropdown select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  padding: 6px 28px 6px 12px;
+  border-radius: 10px;
+
+  background:
+    linear-gradient(rgba(20, 28, 55, 0.75),
+      rgba(20, 28, 55, 0.75));
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+
+  border: 1px solid var(--border);
+  color: var(--fg);
+
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Hover / focus */
+.month-band .mb-dropdown select:hover {
+  filter: brightness(1.1);
+}
+
+.month-band .mb-dropdown select:focus {
+  outline: none;
+  border-color: #4c78ff;
+  box-shadow: 0 0 0 1px rgba(76, 120, 255, 0.35);
+}
+
+
+.month-band .mb-dropdown option {
+  background-color: #121a33;
+  /* dark slate */
+  color: #dbe7ff;
+}
+
+/* Selected month */
+.month-band .mb-dropdown option:checked {
+  background-color: #20315c;
+  color: #ffffff;
+}
+
+/* Disabled months (if you ever reintroduce them) */
+.month-band .mb-dropdown option:disabled {
+  color: #6b7280;
+}
+
+
+/* Closed select – already mostly styled, but tighten it */
+.month-band .mb-dropdown select {
+  border-radius: 12px;
+  border: 1px solid rgba(120, 150, 255, 0.35);
+  background-clip: padding-box;
+  /* helps suppress OS outlines */
+
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(120, 150, 255, 0.25);
+}
+
+/* Kill default focus ring / outline */
+.month-band .mb-dropdown select:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(120, 150, 255, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Base option styling */
+.month-band .mb-dropdown option {
+  background-color: #121a33;
+  color: #dbe7ff;
+
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+
+/* Hovered option */
+.month-band .mb-dropdown option:hover {
+  background-color: #20315c;
+  /* same as current-day pill */
+  color: #ffffff;
+}
+
+/* Selected option */
+.month-band .mb-dropdown option:checked {
+  background-color: #2a3f7a;
+  color: #ffffff;
+}
+
 
 
 
